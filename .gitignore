@@ -1,0 +1,27 @@
+# 敏感文件 - 绝不存档
+密码/
+
+# 系统垃圾
+Thumbs.db
+*.tmp
+*.log
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Fooocus 生成的大量图片和模型（独立 git 仓库，不纳入本仓库）
+Fooocus/
+
+# 小秋记忆（独立 git 仓库）
+xiaoqiu-memory/
+
+# 新闻简报（每日生成，不需要版本管理）
+每日新闻/
+
+# 个人资料
+个人学习/
