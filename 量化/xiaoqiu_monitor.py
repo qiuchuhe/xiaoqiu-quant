@@ -2,34 +2,31 @@
 #!/usr/bin/env python3
 """
 ╔══════════════════════════════════════════════╗
-║   🦀 小秋量化监控系统 v1.0                   ║
-║   双策略实时监控 + 自动交易触发               ║
-║   券商: 国信证券 → 同花顺下单端              ║
+║   🦀 小秋持仓监控 v2.0                       ║
+║   对接策略一：均线多头+温和放量               ║
+║   盯持仓 → 四级卖出信号 → 报警/自动卖       ║
 ╚══════════════════════════════════════════════╝
 
 用法:
-  python xiaoqiu_monitor.py                实盘监控(同花顺必须开着)
-  python xiaoqiu_monitor.py --dry          模拟盘模式(不实际下单,只看信号)
-  python xiaoqiu_monitor.py --once         单次扫描,不循环
-  python xiaoqiu_monitor.py --interval 120 每120秒扫描一次(默认60秒)
+  python xiaoqiu_monitor.py                   模拟盘监控
+  python xiaoqiu_monitor.py --once            单次检查
+  python xiaoqiu_monitor.py --interval 120    每120秒扫描
+  python xiaoqiu_monitor.py --live            实盘模式(同花顺必须开着)
 
-策略:
-  策略A: MA5金叉买入 / MA5死叉卖出
-  策略B: 均线多头排列+温和放量 → 次日开盘买入 → 持有N天卖出
-  通用止损: 持仓亏损超5% → 次日开盘卖出
-  通用止盈: 持仓盈利超10% → 次日开盘卖出
+卖出信号（策略一）:
+  🔴 优先级1: 亏损 ≥ 5% → 硬止损
+  🟡 优先级2: MA5 下穿 MA10 → 趋势破坏
+  🟢 优先级3: 盈利 ≥ 10% → 止盈
+  🔵 优先级4: 量比>2 且 涨幅<1% → 放量滞涨
 """
 
 import sys, time, os, json, re
-from datetime import datetime, timedelta
-from collections import OrderedDict
+from datetime import datetime
 
-# ─── 编码 ───
 if sys.platform == "win32":
     try: sys.stdout.reconfigure(encoding="utf-8")
     except: pass
 
-# ─── HTTP ───
 import urllib.request
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
@@ -38,34 +35,19 @@ def http_get(url, timeout=10, decode="gbk"):
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read().decode(decode)
 
-
-# ═══════════════════════════════════════════
-# 配置
-# ═══════════════════════════════════════════
-
+# ─── 路径 ───
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATE_FILE = os.path.join(BASE_DIR, ".monitor_state.json")
+STRATEGY1_DIR = os.path.join(os.path.dirname(BASE_DIR), "策略量化", "策略1")
+POSITION_FILE = os.path.join(BASE_DIR, ".position.json")
 LOG_FILE = os.path.join(BASE_DIR, ".trade_log.txt")
-XIADAN_PATH = r"D:\下载\同花顺\同花顺\xiadan.exe"
 
-# 监控标的
-WATCH_STOCKS = [
-    {"code": "002351", "name": "漫步者",   "hold_days": 1,  "max_price": 11.60, "strategy": "B"},
-    {"code": "002568", "name": "百润股份", "hold_days": 0,  "max_price": 20.50, "strategy": "A"},
-    {"code": "600020", "name": "中原高速", "hold_days": 5,  "max_price": 4.20,  "strategy": "B"},
-]
-
-# 风控参数
-STOP_LOSS_PCT = -5.0      # 止损线
-TAKE_PROFIT_PCT = 10.0    # 止盈线
-MAX_POSITION = 1          # 3000本金只持1只
-FIXED_SHARES = 100        # 固定每次100股(小资金)
-INIT_CAPITAL = 3000       # 初始资金(模拟盘用)
-
-# 交易时间
-MARKET_OPEN = "09:30"
-MARKET_CLOSE = "15:00"
-
+# ─── 加载策略一参数 ───
+sys.path.insert(0, STRATEGY1_DIR)
+try:
+    from config import POSITION as S1_POS, SELL_SIGNALS
+except ImportError:
+    S1_POS = {"stop_loss_pct": -5.0, "take_profit_pct": 10.0, "fixed_shares": 100}
+    SELL_SIGNALS = []
 
 # ═══════════════════════════════════════════
 # 颜色 & 日志
@@ -75,498 +57,311 @@ class C:
     R = "\033[1;31m"; G = "\033[1;32m"; Y = "\033[1;33m"
     B = "\033[1;36m"; M = "\033[1;35m"; D = "\033[2;37m"; Z = "\033[0m"
 
-def log(msg, level="INFO"):
+def log(msg):
     now = datetime.now().strftime("%H:%M:%S")
     line = f"[{now}] {msg}"
     print(line)
     try:
         with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(line + "\n")
-    except:
-        pass
+    except: pass
 
 
 # ═══════════════════════════════════════════
-# K线 & 指标
+# 持仓管理
 # ═══════════════════════════════════════════
 
-def get_kline(code, days=120):
-    raw_code = code.replace("sh","").replace("sz","").zfill(6)
-    m = "sh" if raw_code.startswith(("6","9")) else "sz"
-    url = f"http://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={m}{raw_code},day,,,{days},qfq"
+def load_positions():
+    """从 .position.json 读取持仓"""
+    if os.path.exists(POSITION_FILE):
+        with open(POSITION_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else [data]
+    return []
+
+def save_positions(positions):
+    with open(POSITION_FILE, "w", encoding="utf-8") as f:
+        json.dump(positions, f, ensure_ascii=False, indent=2)
+
+
+# ═══════════════════════════════════════════
+# 行情 & K线
+# ═══════════════════════════════════════════
+
+def get_quotes(codes):
+    """腾讯批量行情"""
+    results = []
+    for i in range(0, len(codes), 50):
+        batch = codes[i:i+50]
+        try:
+            url = "http://qt.gtimg.cn/q=" + ",".join(batch)
+            raw = http_get(url, timeout=10)
+            for line in raw.strip().split(";\n"):
+                m = re.search(r'="(.+)"$', line.strip())
+                if not m: continue
+                f = m.group(1).split("~")
+                if len(f) < 40: continue
+                try:
+                    price = float(f[3]) if f[3] else 0
+                    preclose = float(f[4]) if f[4] else 0
+                    pct = ((price-preclose)/preclose*100) if (price and preclose) else 0
+                    results.append({
+                        "code": f[2], "name": f[1], "price": price,
+                        "pct": round(pct,2), "preclose": preclose,
+                        "open": float(f[5]) if f[5] else 0,
+                        "volume": float(f[6]) if f[6] else 0,
+                        "high": float(f[33]) if len(f)>33 and f[33] else 0,
+                        "low": float(f[34]) if len(f)>34 and f[34] else 0,
+                        "turnover": float(f[38]) if len(f)>38 and f[38] else 0,
+                    })
+                except: continue
+        except: continue
+    return results
+
+def get_kline(code, days=60):
+    raw = str(code).zfill(6)
+    m = "sh" if raw.startswith(("6","9")) else "sz"
+    url = f"http://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={m}{raw},day,,,{days},qfq"
     try:
-        raw = http_get(url, decode="utf-8")
-        data = json.loads(raw)
-        kl = data["data"][f"{m}{raw_code}"].get("day",[]) or \
-             data["data"][f"{m}{raw_code}"].get("qfqday",[])
-        return [{"date": it[0], "open": float(it[1]), "close": float(it[2]),
-                 "high": float(it[3]), "low": float(it[4]), "volume": float(it[5])}
+        data = json.loads(http_get(url, decode="utf-8"))
+        kl = data["data"][f"{m}{raw}"].get("day",[]) or \
+             data["data"][f"{m}{raw}"].get("qfqday",[])
+        return [{"date":it[0],"open":float(it[1]),"close":float(it[2]),
+                 "high":float(it[3]),"low":float(it[4]),"volume":float(it[5])}
                 for it in kl] if kl else None
-    except:
-        return None
+    except: return None
 
-def calc_ma(closes, n):
-    if len(closes) < n: return [None]*len(closes)
-    r = [None]*(n-1)
-    for i in range(n-1, len(closes)):
-        r.append(sum(closes[i-n+1:i+1])/n)
+def calc_ma(values, period):
+    if len(values) < period: return [None]*len(values)
+    r = [None]*(period-1)
+    for i in range(period-1, len(values)):
+        r.append(sum(values[i-period+1:i+1])/period)
     return r
 
 
 # ═══════════════════════════════════════════
-# 行情获取
+# 卖出信号检测（策略一）
 # ═══════════════════════════════════════════
 
-def parse_tx(raw):
-    results = []
-    for line in raw.strip().split(";\n"):
-        m = re.search(r'="(.+)"$', line.strip())
-        if not m: continue
-        f = m.group(1).split("~")
-        if len(f) < 40: continue
-        try:
-            price = float(f[3]) if f[3] else None
-            preclose = float(f[4]) if f[4] else None
-            pct = ((price - preclose) / preclose * 100) if (price and preclose) else None
-            results.append({
-                "code": f[2], "name": f[1], "price": price,
-                "pct": pct, "preclose": preclose,
-                "volume": float(f[6]) if f[6] else 0,
-                "high": float(f[33]) if len(f)>33 and f[33] else None,
-                "low": float(f[34]) if len(f)>34 and f[34] else None,
-                "turnover": float(f[38]) if len(f)>38 and f[38] else None,
-            })
-        except: continue
-    return results
-
-def get_quotes(codes):
-    """批量获取实时行情"""
-    all_r = []
-    for i in range(0, len(codes), 50):
-        batch = codes[i:i+50]
-        url = "http://qt.gtimg.cn/q=" + ",".join(batch)
-        try:
-            raw = http_get(url, timeout=10)
-            all_r.extend(parse_tx(raw))
-        except:
-            continue
-    return all_r
-
-
-# ═══════════════════════════════════════════
-# 策略信号检测
-# ═══════════════════════════════════════════
-
-def check_strategy_A(kl):
-    """策略A: MA5金叉/死叉信号"""
-    if not kl or len(kl) < 25:
-        return None
-    closes = [k["close"] for k in kl]
-    ma5 = calc_ma(closes, 5)
-    ma20 = calc_ma(closes, 20)
-
-    if None in (ma5[-1], ma20[-1], ma5[-2], ma20[-2]):
+def check_sell_signals(pos, quote, kl):
+    """
+    检测策略一的四个卖出信号，按优先级返回第一个触发的。
+    返回: dict{signal_id, name, action, detail} 或 None
+    """
+    code = pos.get("code", "")
+    cost = pos.get("cost", pos.get("buy_price", 0))
+    price = quote.get("price", 0)
+    if price <= 0 or cost <= 0:
         return None
 
-    if ma5[-2] <= ma20[-2] and ma5[-1] > ma20[-1]:
-        return "BUY"        # 金叉 → 买入
-    elif ma5[-2] >= ma20[-2] and ma5[-1] < ma20[-1]:
-        return "SELL"       # 死叉 → 卖出
+    pnl_pct = (price - cost) / cost * 100
+
+    # 信号1: 硬止损 -5%
+    if pnl_pct <= S1_POS["stop_loss_pct"]:
+        return {
+            "id": "hard_stop",
+            "name": "硬止损",
+            "priority": 1,
+            "detail": f"亏损{pnl_pct:.2f}%（阈值{S1_POS['stop_loss_pct']}%）",
+            "action": "次日开盘无条件卖出",
+        }
+
+    # 信号2: MA5下穿MA10
+    if kl and len(kl) >= 15:
+        closes = [k["close"] for k in kl]
+        ma5 = calc_ma(closes, 5)
+        ma10 = calc_ma(closes, 10)
+        if None not in (ma5[-1], ma10[-1], ma5[-2], ma10[-2]):
+            if ma5[-2] >= ma10[-2] and ma5[-1] < ma10[-1]:
+                return {
+                    "id": "ma5_cross_ma10",
+                    "name": "短期趋势破坏",
+                    "priority": 2,
+                    "detail": f"MA5({ma5[-1]:.2f}) 下穿 MA10({ma10[-1]:.2f})",
+                    "action": "次日开盘卖出",
+                }
+
+    # 信号3: 止盈 +10%
+    if pnl_pct >= S1_POS["take_profit_pct"]:
+        return {
+            "id": "take_profit",
+            "name": "止盈",
+            "priority": 3,
+            "detail": f"盈利{pnl_pct:.2f}%（阈值+{S1_POS['take_profit_pct']}%）",
+            "action": "次日开盘卖出",
+        }
+
+    # 信号4: 放量滞涨
+    if kl and len(kl) >= 6:
+        volumes = [k["volume"] for k in kl]
+        avg_vol_5 = sum(volumes[-6:-1]) / 5
+        if avg_vol_5 > 0:
+            vol_ratio = volumes[-1] / avg_vol_5
+            gain = quote.get("pct", 0)
+            if vol_ratio > 2 and gain < 1:
+                return {
+                    "id": "volume_spike_stall",
+                    "name": "放量滞涨",
+                    "priority": 4,
+                    "detail": f"量比{vol_ratio:.1f}x 但涨幅仅{gain:.2f}%",
+                    "action": "当日卖出",
+                }
+
     return None
 
 
-def check_strategy_B(kl):
-    """策略B: 均线多头排列+温和放量 → 买入信号"""
-    if not kl or len(kl) < 35:
-        return None
+# ═══════════════════════════════════════════
+# 模拟交易
+# ═══════════════════════════════════════════
 
-    closes = [k["close"] for k in kl]
-    volumes = [k["volume"] for k in kl]
+def sim_sell(position, quote, signal):
+    """模拟卖出"""
+    code = position.get("code", "")
+    name = position.get("name", "")
+    cost = position.get("cost", position.get("buy_price", 0))
+    price = quote.get("price", 0)
+    shares = position.get("shares", S1_POS.get("fixed_shares", 100))
+    pnl_pct = (price - cost) / cost * 100 if cost > 0 else 0
 
-    ma5 = calc_ma(closes, 5)
-    ma10 = calc_ma(closes, 10)
-    ma15 = calc_ma(closes, 15)
-    ma30 = calc_ma(closes, 30)
+    emoji = "🔴" if pnl_pct < 0 else "🟢"
+    log(f"{emoji} [卖出信号] {name}({code}) "
+        f"成本{cost:.2f} → 现价{price:.2f} "
+        f"盈亏{C.R if pnl_pct<0 else C.G}{pnl_pct:+.2f}%{C.Z}")
+    log(f"  触发: {C.R}{signal['name']}{C.Z} — {signal['detail']}")
+    log(f"  操作: {signal['action']}")
 
-    if None in (ma5[-1], ma10[-1], ma15[-1], ma30[-1]):
-        return None
-    if not (ma5[-1] > ma10[-1] > ma15[-1] > ma30[-1]):
-        return None
-
-    # 今日涨幅 1%-5%
-    if closes[-2] <= 0: return None
-    pct = (closes[-1] - closes[-2]) / closes[-2] * 100
-    if pct < 1 or pct > 5:
-        return None
-
-    # 温和放量 1.2x-3x
-    if len(volumes) < 6: return None
-    avg_vol = sum(volumes[-6:-1]) / 5
-    if avg_vol <= 0: return None
-    vol_ratio = volumes[-1] / avg_vol
-    if vol_ratio < 1.2 or vol_ratio > 3.0:
-        return None
-
-    # 股价 < 25
-    if closes[-1] >= 25:
-        return None
-
-    return "BUY"
+    # 写交易日志
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"\n{'='*50}\n")
+            f.write(f"卖出信号 | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"标的: {name}({code})\n")
+            f.write(f"成本: {cost:.2f} | 现价: {price:.2f} | 盈亏: {pnl_pct:+.2f}%\n")
+            f.write(f"信号: {signal['name']} | {signal['detail']}\n")
+            f.write(f"操作: {signal['action']}\n")
+            f.write(f"{'='*50}\n")
+    except: pass
 
 
 # ═══════════════════════════════════════════
-# 状态管理
-# ═══════════════════════════════════════════
-
-def load_state():
-    """加载持仓和信号状态"""
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, encoding="utf-8") as f:
-            return json.load(f)
-    return {"positions": {}, "trades": [], "capital": INIT_CAPITAL, "last_signal": {}}
-
-def save_state(state):
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
-
-
-# ═══════════════════════════════════════════
-# 模拟交易引擎
-# ═══════════════════════════════════════════
-
-class SimTrader:
-    """模拟盘交易引擎"""
-
-    def __init__(self, state):
-        self.state = state
-
-    def buy(self, code, name, price, reason, hold_days=0):
-        pos = self.state["positions"]
-        if len(pos) >= MAX_POSITION:
-            log(f"⛔ 已达最大持仓{MAX_POSITION}只, 跳过买入{name}", "WARN")
-            return False
-
-        # 固定100股(小资金模式)
-        shares = FIXED_SHARES
-        cost = shares * price * 1.0003
-        if cost > self.state["capital"]:
-            log(f"⛔ 资金不足买入{name}: 需{cost:,.0f} 剩余{self.state['capital']:,.0f}", "WARN")
-            return False
-
-        cost = shares * price * 1.0003  # 手续费
-        pos[code] = {
-            "name": name,
-            "shares": shares,
-            "buy_price": price,
-            "buy_date": datetime.now().strftime("%Y-%m-%d"),
-            "buy_time": datetime.now().strftime("%H:%M:%S"),
-            "reason": reason,
-            "hold_days": hold_days,
-            "high_price": price,  # 持仓期间最高价(移动止盈用)
-            "cost": cost,
-        }
-        self.state["capital"] = self.state["capital"] - cost
-        self.state["trades"].append({
-            "type": "BUY", "code": code, "name": name,
-            "price": price, "shares": shares, "reason": reason,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        })
-        save_state(self.state)
-        log(f"🔴 [模拟买入] {name}({code}) {price:.2f} x {shares}股 = {cost:,.0f}元 "
-            f"原因: {reason}")
-        return True
-
-    def sell(self, code, price, reason):
-        pos = self.state["positions"]
-        if code not in pos:
-            return False
-        p = pos[code]
-        shares = p["shares"]
-        income = shares * price * 0.997  # 手续费
-        pnl_pct = (price - p["buy_price"]) / p["buy_price"] * 100
-
-        self.state["capital"] += income
-        self.state["trades"].append({
-            "type": "SELL", "code": code, "name": p["name"],
-            "price": price, "shares": shares, "pnl_pct": round(pnl_pct, 2),
-            "reason": reason,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        })
-        del pos[code]
-        save_state(self.state)
-
-        emoji = "🟢" if pnl_pct > 0 else "🔴"
-        log(f"{emoji} [模拟卖出] {p['name']}({code}) {price:.2f} x {shares}股 "
-            f"盈亏: {pnl_pct:+.2f}% 原因: {reason}")
-        return True
-
-    def show_status(self):
-        state = self.state
-        total_value = state["capital"]
-        for p in state["positions"].values():
-            total_value += p["shares"] * p["buy_price"]  # 简化用买入价
-        total_pnl = total_value - INIT_CAPITAL
-        pnl_pct = total_pnl / INIT_CAPITAL * 100
-
-        print(f"\n  {'─'*55}")
-        print(f"  💰 资金: {state['capital']:,.0f} | 总资产: {total_value:,.0f} | "
-              f"{C.R if total_pnl>=0 else C.G}总盈亏: {total_pnl:+,.0f} ({pnl_pct:+.2f}%){C.Z}")
-        print(f"  📦 持仓: {len(state['positions'])}只")
-        for code, p in state["positions"].items():
-            pnl = (p.get("current_price", p["buy_price"]) - p["buy_price"]) / p["buy_price"] * 100
-            c = C.R if pnl >= 0 else C.G
-            print(f"     {p['name']}({code}) 成本{p['buy_price']:.2f} "
-                  f"x{p['shares']}股 {c}{pnl:+.2f}%{C.Z}")
-        print(f"  {'─'*55}")
-
-
-# ═══════════════════════════════════════════
-# 实盘交易接口
-# ═══════════════════════════════════════════
-
-class RealTrader:
-    """实盘交易接口(通过同花顺)"""
-
-    def __init__(self):
-        self.user = None
-
-    def connect(self):
-        try:
-            import easytrader
-            self.user = easytrader.use("ths")
-            self.user.connect(XIADAN_PATH)
-            log(f"✅ 已连接同花顺下单端")
-            return True
-        except Exception as e:
-            log(f"❌ 连接同花顺失败: {e}", "ERROR")
-            return False
-
-    def buy(self, code, name, price, amount=100):
-        if not self.user: return False
-        try:
-            self.user.buy(code, price=price, amount=amount)
-            log(f"🔴 [实盘买入] {name}({code}) {price:.2f} x {amount}股")
-            return True
-        except Exception as e:
-            log(f"❌ 买入失败 {name}: {e}", "ERROR")
-            return False
-
-    def sell(self, code, name, price, amount=100):
-        if not self.user: return False
-        try:
-            self.user.sell(code, price=price, amount=amount)
-            log(f"🟢 [实盘卖出] {name}({code}) {price:.2f} x {amount}股")
-            return True
-        except Exception as e:
-            log(f"❌ 卖出失败 {name}: {e}", "ERROR")
-            return False
-
-
-# ═══════════════════════════════════════════
-# 主监控循环
+# 主监控
 # ═══════════════════════════════════════════
 
 def is_market_time():
-    """检查是否在交易时间"""
     now = datetime.now()
-    if now.weekday() >= 5:  # 周末
+    if now.weekday() >= 5:
         return False
     t = now.strftime("%H:%M")
-    return MARKET_OPEN <= t <= MARKET_CLOSE
+    return "09:30" <= t <= "15:00"
 
 
-def monitor_loop(dry_run=True, once=False, interval=60):
-    """主监控循环"""
-    state = load_state()
+def monitor_loop(once=False, interval=60):
+    """持仓监控循环"""
+    positions = load_positions()
 
-    if dry_run:
-        trader = SimTrader(state)
-        log(f"🟡 模拟盘模式 (不实际下单)")
-    else:
-        trader = RealTrader()
-        if not trader.connect():
-            log("❌ 无法连接交易端, 退出", "ERROR")
-            return
-        log(f"🔴 实盘模式 !!!")
+    if not positions:
+        log(f"{C.Y}📭 当前无持仓，无需监控{C.Z}")
+        log(f"{C.D}💡 先运行策略一扫描选股：python 策略量化/策略1/scanner.py{C.Z}")
+        return
 
-    log(f"📋 监控 {len(WATCH_STOCKS)} 只票: "
-        f"{', '.join(s['name'] for s in WATCH_STOCKS)}")
-    log(f"📊 策略A: 双均线金叉/死叉 | 策略B: 多头排列+温和放量")
-    log(f"🛑 止损: {STOP_LOSS_PCT}% | 🎯 止盈: {TAKE_PROFIT_PCT}%")
-    log(f"⏱️  扫描间隔: {interval}s")
+    log(f"{C.B}📊 监控 {len(positions)} 只持仓{C.Z}")
+    for p in positions:
+        log(f"   {p.get('name','')}({p.get('code','')}) 成本{p.get('cost',p.get('buy_price',0)):.2f}")
+
+    log(f"{C.D}卖出信号: 硬止损{S1_POS['stop_loss_pct']}% | 死叉 | 止盈+{S1_POS['take_profit_pct']}% | 放量滞涨{C.Z}")
     log(f"{'═'*55}")
 
     scan_count = 0
+    alerted = set()  # 已报警的股票，避免重复
 
     try:
         while True:
             scan_count += 1
             now = datetime.now()
-            in_market = is_market_time()
 
-            if not in_market and not once:
-                log(f"{C.D}⏸️  非交易时间, 等待中...{C.Z}")
+            if not is_market_time() and not once:
+                if scan_count == 1:
+                    log(f"{C.D}⏸️  非交易时间，等待中...{C.Z}")
                 time.sleep(60)
                 continue
 
-            log(f"\n{C.B}── 扫描 #{scan_count} {now.strftime('%H:%M:%S')} ──{C.Z}")
+            # 重新加载持仓（可能被外部更新）
+            positions = load_positions()
+            if not positions:
+                log(f"{C.Y}📭 持仓已清空{C.Z}")
+                break
 
-            # 1. 拉取实时行情
+            # 获取行情
             tx_codes = []
-            for s in WATCH_STOCKS:
-                raw = s["code"]
+            for p in positions:
+                raw = str(p.get("code","")).zfill(6)
                 prefix = "sh" if raw.startswith(("6","9")) else "sz"
                 tx_codes.append(f"{prefix}{raw}")
 
             quotes = get_quotes(tx_codes)
             quote_map = {q["code"]: q for q in quotes}
 
-            # 2. 逐只分析
-            for stock in WATCH_STOCKS:
-                code = stock["code"]
-                name = stock["name"]
+            # 逐只检查
+            for pos in positions:
+                code = str(pos.get("code", "")).zfill(6)
+                name = pos.get("name", "")
                 quote = quote_map.get(code)
-                strategy = stock.get("strategy", "B")
-                hold_days = stock.get("hold_days", 0)
 
-                if not quote or quote.get("price") is None:
-                    log(f"  {C.D}{name}({code}) 无行情数据{C.Z}")
+                if not quote or quote.get("price", 0) <= 0:
                     continue
 
                 price = quote["price"]
-                pct = quote.get("pct", 0)
-                turnover = quote.get("turnover", 0)
+                cost = pos.get("cost", pos.get("buy_price", 0))
+                pnl_pct = (price - cost) / cost * 100 if cost > 0 else 0
 
-                # 显示当前状态
-                pct_s = f"{C.R}{pct:+.2f}%{C.Z}" if pct and pct > 0 else \
-                        f"{C.G}{pct:+.2f}%{C.Z}" if pct and pct < 0 else f"{pct:+.2f}%"
-                log(f"  {name}({code}) {price:.2f} {pct_s} 换手{turnover:.2f}%")
+                # 状态显示（每5次扫描显示一次）
+                if scan_count % 5 == 0:
+                    pnl_c = C.R if pnl_pct < 0 else C.G
+                    log(f"  {name}({code}) {price:.2f} {pnl_c}{pnl_pct:+.2f}%{C.Z}")
 
-                # 3. 检查持仓止损/止盈
-                pos = state["positions"].get(code)
-                if pos:
-                    # 更新当前价
-                    pos["current_price"] = price
-                    # 更新最高价
-                    if price > pos.get("high_price", 0):
-                        pos["high_price"] = price
+                # K线（用于MA交叉和放量滞涨检测）
+                kl = get_kline(code, days=30)
 
-                    pnl_pct = (price - pos["buy_price"]) / pos["buy_price"] * 100
+                # 检测卖出信号
+                signal = check_sell_signals(pos, quote, kl)
+                if signal and code not in alerted:
+                    sim_sell(pos, quote, signal)
+                    alerted.add(code)
 
-                    # 止损
-                    if pnl_pct <= STOP_LOSS_PCT:
-                        log(f"  {C.R}⚠️ 触发止损! {name} 亏损 {pnl_pct:.2f}%{C.Z}")
-                        trader.sell(code, price, f"止损({pnl_pct:.2f}%)")
-
-                    # 止盈
-                    elif pnl_pct >= TAKE_PROFIT_PCT:
-                        log(f"  {C.Y}🎯 触发止盈! {name} 盈利 {pnl_pct:.2f}%{C.Z}")
-                        trader.sell(code, price, f"止盈({pnl_pct:.2f}%)")
-
-                    # 移动止盈(从高点回撤3%)
-                    elif pos.get("high_price", 0) > pos["buy_price"] * 1.05:
-                        drawdown = (price - pos["high_price"]) / pos["high_price"] * 100
-                        if drawdown <= -3:
-                            log(f"  {C.Y}📉 移动止盈! {name} 从高点回撤{drawdown:.2f}%{C.Z}")
-                            trader.sell(code, price, f"移动止盈(回撤{drawdown:.2f}%)")
-
-                    # 持有天数到期(策略B)
-                    if hold_days > 0 and pos.get("hold_days", 0) > 0:
-                        held = (datetime.now() - datetime.strptime(
-                            pos["buy_date"], "%Y-%m-%d")).days
-                        if held >= hold_days:
-                            log(f"  {C.B}⏰ 持有到期! {name} 已持{held}天{C.Z}")
-                            trader.sell(code, price, f"持有{hold_days}天到期")
-
-                    continue  # 已持仓, 跳过买入信号
-
-                # 4. 买入信号检测
-                kl = get_kline(code, days=60)
-                if not kl:
-                    continue
-
-                signal = None
-                signal_reason = ""
-
-                if strategy == "A":
-                    sig = check_strategy_A(kl)
-                    if sig == "BUY":
-                        signal = "BUY"
-                        signal_reason = "策略A: MA5金叉"
-                    elif sig == "SELL":
-                        pass  # 卖信号只在持仓时处理
-
-                elif strategy == "B":
-                    sig = check_strategy_B(kl)
-                    if sig == "BUY":
-                        signal = "BUY"
-                        signal_reason = f"策略B: 多头排列+温和放量(持有{hold_days}天)"
-
-                # 防重复: 同一信号10分钟内不重复触发
-                last_sig = state["last_signal"].get(code, {})
-                last_time = last_sig.get("time", "")
-                if last_time:
-                    dt = (datetime.now() - datetime.strptime(last_time, "%H:%M:%S")).seconds
-                    if dt < 600 and last_sig.get("type") == signal:
-                        signal = None
-
-                if signal == "BUY":
-                    state["last_signal"][code] = {
-                        "type": signal, "time": now.strftime("%H:%M:%S")
-                    }
-                    trader.buy(code, name, price, signal_reason, hold_days)
-
-            # 5. 显示状态
-            if dry_run and scan_count % 5 == 0:
-                trader.show_status()
+                    # 自动从持仓移除（模拟盘）
+                    positions = [p for p in positions if str(p.get("code","")).zfill(6) != code]
+                    save_positions(positions)
 
             if once:
                 break
 
-            log(f"{C.D}下次扫描: {interval}秒后{C.Z}")
             time.sleep(interval)
 
     except KeyboardInterrupt:
         log(f"\n{C.Y}👋 监控结束{C.Z}")
-        if dry_run:
-            trader.show_status()
-            save_state(state)
 
-
-# ═══════════════════════════════════════════
-# 入口
-# ═══════════════════════════════════════════
 
 def main():
-    dry_run = "--dry" in sys.argv or "--sim" in sys.argv
     once = "--once" in sys.argv
     interval = 60
 
     for i, arg in enumerate(sys.argv):
         if arg == "--interval" and i+1 < len(sys.argv):
-            interval = int(sys.argv[i+1])
+            try: interval = int(sys.argv[i+1])
+            except: pass
 
     print(f"""
 {C.M}╔══════════════════════════════════════════════╗
-║   🦀 小秋量化监控系统 v1.0                   ║
-║   双策略实时监控 + 自动交易触发               ║
+║  🦀 小秋持仓监控 v2.0                          ║
+║  对接策略一：均线多头+温和放量                  ║
 ╚══════════════════════════════════════════════╝{C.Z}
 
-  模式: {C.Y if dry_run else C.R}{'模拟盘(安全)' if dry_run else '实盘(真实交易!)'}{C.Z}
-  间隔: {interval}秒
-  标的: {len(WATCH_STOCKS)} 只
-  策略A: 双均线金叉/死叉
-  策略B: 均线多头排列+温和放量
+  持仓文件: .position.json
+  卖出信号: 🔴硬止损{S1_POS['stop_loss_pct']}% 🟡MA5死叉 🟢止盈+{S1_POS['take_profit_pct']}% 🔵放量滞涨
+  扫描间隔: {interval}秒
 """)
 
-    if not dry_run:
-        print(f"  {C.R}⚠️  实盘模式! 将使用真金白银!{C.Z}")
-        print(f"  {C.R}确认要继续吗? (输入 yes 继续){C.Z}")
-        if input("  > ").strip().lower() != "yes":
-            print("  已取消")
-            return
-
-    monitor_loop(dry_run=dry_run, once=once, interval=interval)
+    monitor_loop(once=once, interval=interval)
 
 
 if __name__ == "__main__":
