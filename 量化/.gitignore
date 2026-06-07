@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.monitor_state.json
+.trade_log.txt
+.stock_codes.json

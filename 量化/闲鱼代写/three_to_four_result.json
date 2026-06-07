@@ -1,0 +1,76 @@
+{
+  "date": "20260605",
+  "candidates": [
+    {
+      "code": "603135",
+      "name": "中重科技",
+      "price": 14.03,
+      "pct": 10.039215087890625,
+      "turnover": 5.619645118713379,
+      "seal_money": 57615808.0,
+      "float_mv": 8832419262.4,
+      "first_seal": "104309",
+      "last_seal": "104309",
+      "break_times": 0,
+      "board_stat": "3/3",
+      "cons_board": 3,
+      "industry": "专用设备",
+      "scores": {
+        "seal_speed": 13,
+        "seal_stability": 20,
+        "volume_health": 20,
+        "seal_strength": 6,
+        "sector_support": 4
+      },
+      "total_score": 63
+    },
+    {
+      "code": "600403",
+      "name": "大有能源",
+      "price": 8.14,
+      "pct": 10.0,
+      "turnover": 8.912552833557129,
+      "seal_money": 16981594.0,
+      "float_mv": 19461212952.280003,
+      "first_seal": "093643",
+      "last_seal": "143304",
+      "break_times": 9,
+      "board_stat": "5/5",
+      "cons_board": 5,
+      "industry": "煤炭开采",
+      "scores": {
+        "seal_speed": 24,
+        "seal_stability": 0,
+        "volume_health": 17,
+        "seal_strength": 1,
+        "sector_support": 4
+      },
+      "total_score": 46
+    }
+  ],
+  "top_pick": {
+    "code": "603135",
+    "name": "中重科技",
+    "price": 14.03,
+    "pct": 10.039215087890625,
+    "turnover": 5.619645118713379,
+    "seal_money": 57615808.0,
+    "float_mv": 8832419262.4,
+    "first_seal": "104309",
+    "last_seal": "104309",
+    "break_times": 0,
+    "board_stat": "3/3",
+    "cons_board": 3,
+    "industry": "专用设备",
+    "scores": {
+      "seal_speed": 13,
+      "seal_stability": 20,
+      "volume_health": 20,
+      "seal_strength": 6,
+      "sector_support": 4
+    },
+    "total_score": 63
+  },
+  "s_level": [],
+  "a_level": []
+}

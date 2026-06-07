@@ -1,0 +1,21 @@
+{
+  "holdings": [
+    {
+      "code": "600179",
+      "name": "安通控股",
+      "buy_price": 4.64,
+      "shares": 300,
+      "cost": 1392.0,
+      "stop_loss": 4.41,
+      "stop_loss_pct": -5.0,
+      "take_profit": 5.1,
+      "take_profit_pct": 10.0,
+      "buy_date": "2026-06-04",
+      "buy_time": "14:54",
+      "notes": "双策略共同选中(用户+小秋) | 模拟盘"
+    }
+  ],
+  "principal": 3000,
+  "cash_used": 1392.0,
+  "cash_remaining": 1608.0
+}
