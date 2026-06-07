@@ -225,6 +225,8 @@ def main():
             run_script("scanner.py", cwd=STRATEGY1_DIR)
         elif cmd == "alert":
             run_script("alert_daemon.py")
+        elif cmd == "scout-combined":
+            menu_combined_scout()
         elif cmd == "help":
             print(f"""
 {C.M}小秋量化工具箱 v2.0 快捷方式:{C.Z}
