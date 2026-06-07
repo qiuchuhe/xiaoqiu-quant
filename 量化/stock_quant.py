@@ -2,8 +2,10 @@
 #!/usr/bin/env python3
 """
 =========================================================================
- A股量化工具集 v2.0
+ A股量化工具集 v2.1 (精简版)
  数据源: 同花顺 + 腾讯双引擎 (HTTP协议, 无需梯子)
+
+ 选股策略 → 请用 D:\AI小秋\策略量化\策略1\scanner.py
 =========================================================================
  用法:
    python stock_quant.py                       实时行情看板
@@ -13,9 +15,9 @@
    python stock_quant.py search 茅台            搜索股票
    python stock_quant.py ths 600519            同花顺深度数据(市值/PE/涨跌停)
    python stock_quant.py ma 600519             均线分析(日K)
-   python stock_quant.py signal                量化选股扫描
-   python stock_quant.py screen               多因子选股(均线+量能+换手)
-   python stock_quant.py backtest 600519       策略回测
+   python stock_quant.py backtest 600519       双均线策略回测
+   python stock_quant.py bt2 600519            多头排列策略回测
+   python stock_quant.py cmp 600519            双回测对比
    python stock_quant.py flow 600519           资金流向(同花顺源)
    python stock_quant.py import /path/to/file  导入同花顺自选股
 =========================================================================
@@ -467,493 +469,6 @@ def calc_macd(closes, fast=12, slow=26, signal=9):
     return dif, dea, macd
 
 
-# ==================== 量化扫描 ====================
-
-def scan_signals(codes_dict):
-    """量化选股信号扫描"""
-    codes = list(codes_dict.keys())
-    signals = []
-    print(f"\n  {C.Y}⏳ 正在扫描 {len(codes)} 只股票...{C.Z}")
-    for i, code in enumerate(codes):
-        if i % 50 == 0:
-            sys.stdout.write(f"\r  {C.D}进度: {i}/{len(codes)}{C.Z}")
-            sys.stdout.flush()
-        try:
-            kl = get_kline(code, days=60)
-            if not kl or len(kl)<30: continue
-            closes = [k["close"] for k in kl]
-            volumes = [k["volume"] for k in kl]
-            highs = [k["high"] for k in kl]
-
-            ma5 = calc_ma(closes, 5)
-            ma20 = calc_ma(closes, 20)
-            dif, dea, macd_bar = calc_macd(closes)
-            avg_vol = sum(volumes[-20:-1])/20 if len(volumes)>20 else 1
-
-            score = 0; reasons = []
-
-            if ma5[-1] and ma20[-1] and ma5[-2] and ma20[-2]:
-                if ma5[-2]<=ma20[-2] and ma5[-1]>ma20[-1]:
-                    score+=3; reasons.append("MA金叉")
-                elif ma5[-1]>ma20[-1]: score+=1  # 多头
-
-            if dif[-1] and dea[-1] and dif[-2] and dea[-2]:
-                if dif[-2]<=dea[-2] and dif[-1]>dea[-1]:
-                    score+=3; reasons.append("MACD金叉")
-
-            if volumes[-1] > avg_vol*1.5: score+=2; reasons.append("放量")
-            if closes[-1] >= max(highs[-20:-1])*0.98: score+=1; reasons.append("逼近前高")
-
-            if score >= 3:
-                signals.append({
-                    "code": code, "name": codes_dict.get(code,""),
-                    "score": score, "reasons": reasons,
-                    "close": closes[-1], "vol_ratio": volumes[-1]/avg_vol if avg_vol>0 else 1,
-                })
-        except: continue
-
-    sys.stdout.write(f"\r{C.D}{' '*40}{C.Z}\r")
-    return sorted(signals, key=lambda x: x["score"], reverse=True)
-
-
-# ==================== 多因子选股 v2.0 ====================
-
-def _is_valid_board(code, name):
-    """检查是否为主板有效标的（排除创业板/科创板/ST）"""
-    if code.startswith('3') or code.startswith('688'):
-        return False
-    if 'ST' in name or '*ST' in name:
-        return False
-    if not code.startswith(('0', '2', '6', '9')):
-        return False
-    return True
-
-
-def _batch_screen(codes_dict, label=""):
-    """对一批股票执行完整筛选流水线，返回通过的列表"""
-    if not codes_dict:
-        return []
-
-    tx_codes = []
-    code_name_map = {}
-    for code, name in codes_dict.items():
-        prefix = 'sh' if code.startswith(('6', '9')) else 'sz'
-        tx_code = f"{prefix}{code}"
-        tx_codes.append(tx_code)
-        code_name_map[code] = name
-
-    # 批量行情
-    all_quotes = []
-    for i in range(0, len(tx_codes), 50):
-        batch = tx_codes[i:i+50]
-        try:
-            url = "http://qt.gtimg.cn/q=" + ",".join(batch)
-            raw = http_get(url, timeout=15)
-            all_quotes.extend(parse_tx(raw))
-        except:
-            continue
-
-    # 价格+涨幅+换手初筛
-    candidates = []
-    for q in all_quotes:
-        code = q.get('code', '')
-        price = q.get('price')
-        pct = q.get('pct')
-        turnover = q.get('turnover')
-        if price is None or pct is None:
-            continue
-        if price >= 20:
-            continue
-        if pct < 1 or pct > 5:
-            continue
-        if turnover is not None and (turnover < 1 or turnover > 8):
-            continue
-        candidates.append({
-            'code': code,
-            'name': code_name_map.get(code, q.get('name', '')),
-            'price': price,
-            'pct': pct,
-            'turnover': turnover,
-            'volume': q.get('volume', 0),
-        })
-
-    # K线分析: 均线多头 + 温和放量（并发）
-    results = []
-    if candidates:
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            futures = {executor.submit(_analyze_one, s): s for s in candidates}
-            for f in as_completed(futures):
-                r = f.result()
-                if r:
-                    results.append(r)
-                    sys.stdout.write(f"\r  {C.D}均线分析: {len(results)} / {len(candidates)}{C.Z}")
-                    sys.stdout.flush()
-        sys.stdout.write(f"\r{C.D}{' '*50}{C.Z}\r")
-
-    return results
-
-
-def _analyze_one(s):
-    """分析单只股票的K线指标（供并发调用）"""
-    try:
-        code = s['code']
-        kl = get_kline(code, days=60)
-        if not kl or len(kl) < 35:
-            return None
-
-        closes = [k['close'] for k in kl]
-        volumes = [k['volume'] for k in kl]
-
-        ma5 = calc_ma(closes, 5)
-        ma10 = calc_ma(closes, 10)
-        ma15 = calc_ma(closes, 15)
-        ma30 = calc_ma(closes, 30)
-
-        if None in (ma5[-1], ma10[-1], ma15[-1], ma30[-1]):
-            return None
-        if not (ma5[-1] > ma10[-1] > ma15[-1] > ma30[-1]):
-            return None
-
-        if len(volumes) < 6:
-            return None
-        avg_vol_5 = sum(volumes[-6:-1]) / 5
-        if avg_vol_5 <= 0:
-            return None
-        vol_ratio = volumes[-1] / avg_vol_5
-        if vol_ratio < 1.2 or vol_ratio > 3.0:
-            return None
-
-        turnover = s['turnover']
-        if turnover is None:
-            return None
-
-        return {
-            'code': code,
-            'name': s['name'],
-            'price': s['price'],
-            'pct': s['pct'],
-            'turnover': turnover,
-            'vol_ratio': vol_ratio,
-            'ma5': ma5[-1],
-            'ma10': ma10[-1],
-        }
-    except:
-        return None
-
-
-def _analyze_one_xq(s):
-    """分析单只股票(小秋策略)：MA5>10>20>30 + 放量>1.5x + 逼近前高"""
-    try:
-        code = s['code']
-        kl = get_kline(code, days=60)
-        if not kl or len(kl) < 35:
-            return None
-
-        closes = [k['close'] for k in kl]
-        volumes = [k['volume'] for k in kl]
-        highs = [k['high'] for k in kl]
-
-        ma5 = calc_ma(closes, 5)
-        ma10 = calc_ma(closes, 10)
-        ma20 = calc_ma(closes, 20)
-        ma30 = calc_ma(closes, 30)
-
-        if None in (ma5[-1], ma10[-1], ma20[-1], ma30[-1]):
-            return None
-        # 小秋: MA5 > MA10 > MA20 > MA30
-        if not (ma5[-1] > ma10[-1] > ma20[-1] > ma30[-1]):
-            return None
-
-        if len(volumes) < 6:
-            return None
-        avg_vol_5 = sum(volumes[-6:-1]) / 5
-        if avg_vol_5 <= 0:
-            return None
-        vol_ratio = volumes[-1] / avg_vol_5
-        # 小秋: 放量突破 >1.5x (不设上限)
-        if vol_ratio <= 1.5:
-            return None
-
-        # 小秋: 收盘逼近近5日最高价 (>=98%)
-        recent_high_5 = max(highs[-6:-1]) if len(highs) >= 6 else highs[-1]
-        if recent_high_5 <= 0:
-            return None
-        if closes[-1] < recent_high_5 * 0.98:
-            return None
-
-        turnover = s['turnover']
-        if turnover is None:
-            return None
-
-        return {
-            'code': code,
-            'name': s['name'],
-            'price': s['price'],
-            'pct': s['pct'],
-            'turnover': turnover,
-            'vol_ratio': vol_ratio,
-            'near_high': closes[-1]/recent_high_5*100,
-            'ma5': ma5[-1],
-            'ma20': ma20[-1],
-        }
-    except:
-        return None
-
-
-def _batch_screen_xq(codes_dict):
-    """小秋策略批量筛选"""
-    if not codes_dict:
-        return []
-
-    tx_codes = []
-    code_name_map = {}
-    for code, name in codes_dict.items():
-        prefix = 'sh' if code.startswith(('6', '9')) else 'sz'
-        tx_code = f"{prefix}{code}"
-        tx_codes.append(tx_code)
-        code_name_map[code] = name
-
-    all_quotes = []
-    for i in range(0, len(tx_codes), 50):
-        batch = tx_codes[i:i+50]
-        try:
-            url = "http://qt.gtimg.cn/q=" + ",".join(batch)
-            raw = http_get(url, timeout=15)
-            all_quotes.extend(parse_tx(raw))
-        except:
-            continue
-
-    # 小秋: 涨幅2-7% | 换手1-8% | 股价<25
-    candidates = []
-    for q in all_quotes:
-        code = q.get('code', '')
-        price = q.get('price')
-        pct = q.get('pct')
-        turnover = q.get('turnover')
-        if price is None or pct is None:
-            continue
-        if price >= 20:
-            continue
-        if pct < 2 or pct > 7:
-            continue
-        if turnover is not None and (turnover < 1 or turnover > 8):
-            continue
-        candidates.append({
-            'code': code,
-            'name': code_name_map.get(code, q.get('name', '')),
-            'price': price,
-            'pct': pct,
-            'turnover': turnover,
-            'volume': q.get('volume', 0),
-        })
-
-    results = []
-    if candidates:
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            futures = {executor.submit(_analyze_one_xq, s): s for s in candidates}
-            for f in as_completed(futures):
-                r = f.result()
-                if r:
-                    results.append(r)
-                    sys.stdout.write(f"\r  {C.D}小秋均线: {len(results)}/{len(candidates)}{C.Z}")
-                    sys.stdout.flush()
-        sys.stdout.write(f"\r{C.D}{' '*50}{C.Z}\r")
-
-    return results
-
-
-def screen_both():
-    """同时跑用户策略和小秋策略，对比输出"""
-    print(f"\n  {C.M}═══ 双策略对比扫描 ═══{C.Z}\n")
-
-    # 公用数据
-    wl = load_watchlist()
-    all_codes = get_stock_codes()
-
-    watch_codes = {}
-    for full_code, name in wl.items():
-        raw = full_code.replace('sh', '').replace('sz', '').zfill(6)
-        if _is_valid_board(raw, name):
-            watch_codes[raw] = name
-
-    market_codes = {}
-    watch_raw_set = set(watch_codes.keys())
-    if all_codes:
-        for code, name in all_codes.items():
-            if code in watch_raw_set:
-                continue
-            if not _is_valid_board(code, name):
-                continue
-            market_codes[code] = name
-
-    print(f"  🏠 自选股: {len(watch_codes)} 只 | 🌐 全市场: {len(market_codes) if all_codes else 0} 只\n")
-
-    # ===== 用户策略 =====
-    print(f"  {C.B}━━━ 📊 用户策略 ━━━{C.Z}")
-    print(f"  {C.D}涨幅1-5% | MA5>10>15>30 | 量比1.2-3x | 换手1-8%{C.Z}\n")
-    user_watch = _batch_screen(watch_codes)
-    for r in user_watch: r['_watchlist'] = True
-    user_mkt = _batch_screen(market_codes) if market_codes else []
-    for r in user_mkt: r['_watchlist'] = False
-    user_all = user_watch + user_mkt
-    print(f"  {C.Y}用户策略共: {len(user_all)} 只 ({len(user_watch)}🏠 + {len(user_mkt)}🌐){C.Z}\n")
-
-    # ===== 小秋策略 =====
-    print(f"  {C.M}━━━ 🎯 小秋策略 ━━━{C.Z}")
-    print(f"  {C.D}涨幅2-7% | MA5>10>20>30 | 放量>1.5x | 逼近前高 | 换手1-8%{C.Z}\n")
-    xq_watch = _batch_screen_xq(watch_codes)
-    for r in xq_watch: r['_watchlist'] = True
-    xq_mkt = _batch_screen_xq(market_codes) if market_codes else []
-    for r in xq_mkt: r['_watchlist'] = False
-    xq_all = xq_watch + xq_mkt
-    print(f"  {C.Y}小秋策略共: {len(xq_all)} 只 ({len(xq_watch)}🏠 + {len(xq_mkt)}🌐){C.Z}\n")
-
-    # ===== 对比汇总 =====
-    user_codes = set(r['code'] for r in user_all)
-    xq_codes = set(r['code'] for r in xq_all)
-    both = user_codes & xq_codes
-    only_user = user_codes - xq_codes
-    only_xq = xq_codes - user_codes
-
-    print(f"  {'═'*80}")
-    print(f"  {C.M}📋 对比总结{C.Z}")
-    print(f"  {'═'*80}")
-    print(f"  🔵 仅用户策略选中: {len(only_user)} 只")
-    print(f"  🟣 仅小秋策略选中: {len(only_xq)} 只")
-    print(f"  🟢 双方共同选中: {len(both)} 只 ← 交集最强信号")
-    print()
-
-    if both:
-        _print_result_table([r for r in user_all if r['code'] in both],
-                           "🟢 双策略共同选中（最强信号）", 1)
-    if only_user:
-        _print_result_table([r for r in user_all if r['code'] in only_user],
-                           "🔵 仅用户策略", 10)
-    if only_xq:
-        _print_result_table([r for r in xq_all if r['code'] in only_xq],
-                           "🟣 仅小秋策略", 20)
-
-    print(f"  {C.D}请在同花顺核对筹码峰，踢出获利盘>80%的票{C.Z}")
-    print(f"  {'═'*80}\n")
-
-    return user_all, xq_all
-
-
-def _print_result_table(results, title, start_rank=1):
-    """打印候选结果表格"""
-    if not results:
-        return 0
-    print(f"\n  {C.M}▸ {title}{C.Z} ({len(results)} 只)")
-    print(f"  {'─'*80}")
-    print(f"  {'排名':<4s} {'代码':<8s} {'名称':<10s} {'现价':>7s} {'涨幅':>8s} {'换手':>6s} {'量比':>5s}")
-    print(f"  {'─'*80}")
-
-    results.sort(key=lambda x: x['pct'], reverse=True)
-
-    for i, r in enumerate(results, start_rank):
-        pct_str = f"{C.R}{r['pct']:+.2f}%{C.Z}" if r['pct'] > 0 else f"{C.G}{r['pct']:+.2f}%{C.Z}"
-        mark = "⭐" if r.get('_watchlist') else "  "
-        print(f"  {mark}{i:<4d} {C.B}{r['code']:<8s}{C.Z} {r['name']:<10s} "
-              f"{r['price']:>7.2f}  {pct_str}  "
-              f"{r['turnover']:>5.2f}%  {r['vol_ratio']:>5.2f}x")
-    return len(results)
-
-
-def screen_stocks():
-    """策略v2.0 多因子选股 — 自选股优先 + 全市场补充
-    输出候选列表，需人工核对筹码峰"""
-    print(f"\n  {C.M}═══ 多因子选股 v2.0 ═══{C.Z}")
-    print(f"  {C.D}条件: 涨幅1-5% | 股价<20元 | MA5>10>15>30 | 温和放量1.2-3x | 换手1-8%{C.Z}")
-    print(f"  {C.D}流程: 🏠自选股优先筛选 → 🌐全市场补充筛选 → 📋汇总{C.Z}")
-    print(f"  {C.D}排除: 创业板/科创板/ST{C.Z}\n")
-
-    # ===== 加载数据 =====
-    wl = load_watchlist()
-    all_codes = get_stock_codes()
-    if not all_codes:
-        print(f"  {C.Y}⚠️ 全市场列表获取失败（网络问题），仅扫描自选股{C.Z}\n")
-
-    # ===== 整理自选股 =====
-    watch_codes = {}  # 自选股中符合板块条件的
-    watch_skip = 0
-    for full_code, name in wl.items():
-        raw = full_code.replace('sh', '').replace('sz', '').zfill(6)
-        if _is_valid_board(raw, name):
-            watch_codes[raw] = name
-        else:
-            watch_skip += 1
-
-    print(f"  {C.Y}🏠 自选股{C.Z}: {len(wl)} 只 → {len(watch_codes)} 只主板有效 "
-          f"({C.D}排除{watch_skip}只创业板/科创/ST{C.Z})")
-
-    # ===== 整理全市场（排除自选股已覆盖的） =====
-    market_codes = {}
-    watch_raw_set = set(watch_codes.keys())
-    if all_codes:
-        for code, name in all_codes.items():
-            if code in watch_raw_set:
-                continue
-            if not _is_valid_board(code, name):
-                continue
-            market_codes[code] = name
-
-    if all_codes:
-        print(f"  {C.Y}🌐 全市场{C.Z}: {len(all_codes)} 只 → {len(market_codes)} 只待筛 "
-              f"({C.D}已排除自选股+创业板/科创/ST{C.Z})")
-    else:
-        print(f"  {C.Y}🌐 全市场{C.Z}: 跳过（仅自选股模式）")
-
-    # ===== Phase 1: 自选股优先筛选 =====
-    print(f"\n  {C.B}━━━ Phase 1: 自选股筛选 ━━━{C.Z}")
-    watch_results = _batch_screen(watch_codes)
-    for r in watch_results:
-        r['_watchlist'] = True
-    print(f"  {C.Y}自选股通过: {len(watch_results)} 只{C.Z}")
-
-    # ===== Phase 2: 全市场补充筛选 =====
-    if market_codes:
-        print(f"\n  {C.B}━━━ Phase 2: 全市场补充 ━━━{C.Z}")
-        mkt_total = len(market_codes)
-        print(f"  待扫描 {mkt_total} 只...", end='', flush=True)
-        market_results = _batch_screen(market_codes)
-        for r in market_results:
-            r['_watchlist'] = False
-        print(f" 通过 {len(market_results)} 只")
-    else:
-        print(f"\n  {C.B}━━━ Phase 2: 全市场补充 ━━━{C.Z} 跳过")
-        market_results = []
-
-    # ===== 汇总输出 =====
-    print(f"\n  {'═'*80}")
-    print(f"  {C.M}📋 最终候选汇总（需人工核对筹码峰）{C.Z}")
-    print(f"  {'═'*80}")
-
-    rank = 1
-    if watch_results:
-        rank += _print_result_table(watch_results, "🏠 自选股候选 ⭐", start_rank=rank)
-    else:
-        print(f"\n  {C.D}🏠 自选股候选: 无{C.Z}")
-
-    if market_results:
-        _print_result_table(market_results, "🌐 全市场候选", start_rank=rank)
-    else:
-        print(f"\n  {C.D}🌐 全市场候选: 无{C.Z}")
-
-    total_all = len(watch_results) + len(market_results)
-
-    print(f"\n  {'═'*80}")
-    if total_all > 0:
-        print(f"  {C.Y}📌 总计 {total_all} 只候选 (🏠{len(watch_results)} + 🌐{len(market_results)}){C.Z}")
-        print(f"  {C.D}⭐=自选股  请在同花顺查看【筹码峰】，踢出获利盘>80%的票{C.Z}")
-        print(f"  {C.D}确认最终名单后告诉我，我来跑回测~{C.Z}")
-    else:
-        print(f"  {C.Y}📌 今日无符合条件股票，换个策略或放宽条件试试{C.Z}")
-    print(f"  {'═'*80}\n")
-
-    return watch_results + market_results
-
 # ==================== 回测 ====================
 
 def backtest(code, name=""):
@@ -1181,7 +696,7 @@ def show_kline(code, name=""):
 def usage():
     print(f"""
   {C.M}╔══════════════════════════════════════════╗
-  ║     A股量化工具集 v2.0                   ║
+  ║     A股量化工具集 v2.1 (精简版)           ║
   ║     同花顺 + 腾讯 双引擎                  ║
   ╚══════════════════════════════════════════╝{C.Z}
 
@@ -1193,18 +708,20 @@ def usage():
 
   {C.B}同花顺深度数据:{C.Z}
     python stock_quant.py ths 600519        个股深度(市值/PE/资金流向)
-    python stock_quant.py ths 300750        宁德时代深度数据
 
   {C.B}量化分析:{C.Z}
     python stock_quant.py ma 600519         均线分析(金叉/死叉)
-    python stock_quant.py signal            量化选股扫描
-    python stock_quant.py screen            多因子选股(自选优先+全市场)
-    python stock_quant.py backtest 600519   策略回测
+    python stock_quant.py backtest 600519   双均线策略回测
+    python stock_quant.py bt2 600519        多头排列策略回测
+    python stock_quant.py cmp 600519        双回测对比
 
   {C.B}自选股管理:{C.Z}
     python stock_quant.py search 茅台        搜索股票
     python stock_quant.py import FILE       从文件导入自选股
     python stock_quant.py autoload          自动检测同花顺自选股
+
+  {C.M}📊 选股策略 → 策略目录:{C.Z}
+    D:\\AI小秋\\策略量化\\策略1\\scanner.py
   """)
 
 
@@ -1297,24 +814,6 @@ def main():
         all_codes = get_stock_codes()
         name = all_codes.get(code, "")
         show_kline(code, name)
-
-    elif cmd == "signal":
-        print(f"\n  {C.M}═══ 量化选股扫描 ═══{C.Z}")
-        all_codes = get_stock_codes()
-        signals = scan_signals(all_codes)
-        print(f"\n  {C.Y}发现 {len(signals)} 个信号:{C.Z}\n")
-        print(f"  {'代码':<8s} {'名称':<10s} {'评分':>4s}  {'信号':<25s}  {'量比':>5s}")
-        print(f"  {'─'*60}")
-        for s in signals[:30]:
-            print(f"  {C.B}{s['code']:<8s}{C.Z} {s['name']:<10s}  "
-                  f"{s['score']:>4d}  {','.join(s['reasons']):<25s}  {s['vol_ratio']:>4.1f}x")
-        print()
-
-    elif cmd == "screen":
-        screen_stocks()
-
-    elif cmd in ("screen2", "sq"):
-        screen_both()
 
     elif cmd == "backtest":
         code = sys.argv[2] if len(sys.argv) > 2 else "600519"
