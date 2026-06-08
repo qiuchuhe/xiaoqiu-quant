@@ -1,0 +1,156 @@
+{
+  "date": "20260608",
+  "time": "10:41:08",
+  "total": 6,
+  "with_signal": 5,
+  "candidates": [
+    {
+      "code": "603500",
+      "name": "祥和实业",
+      "price": 13.45,
+      "pct": 9.98,
+      "turnover": 6.53,
+      "volume": 217035.0,
+      "open": 13.0,
+      "high": 13.45,
+      "low": 13.0,
+      "preclose": 12.23,
+      "ma5": 11.45,
+      "ma10": 10.93,
+      "ma20": 10.58,
+      "vol_ratio": 1.8,
+      "close": 13.45,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘13.45距MA10(10.93)仅+23.1%，收阳确认"
+        },
+        {
+          "type": "B_breakout_ma5",
+          "name": "放量站稳MA5",
+          "detail": "收盘13.45站稳MA5(11.45)，量比1.8x"
+        }
+      ]
+    },
+    {
+      "code": "600403",
+      "name": "大有能源",
+      "price": 8.78,
+      "pct": 7.86,
+      "turnover": 6.86,
+      "volume": 1639572.0,
+      "open": 8.23,
+      "high": 8.95,
+      "low": 8.23,
+      "preclose": 8.14,
+      "ma5": 7.45,
+      "ma10": 6.3,
+      "ma20": 5.84,
+      "vol_ratio": 2.03,
+      "close": 8.84,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘8.84距MA10(6.30)仅+40.4%，收阳确认"
+        },
+        {
+          "type": "B_breakout_ma5",
+          "name": "放量站稳MA5",
+          "detail": "收盘8.84站稳MA5(7.45)，量比2.0x"
+        }
+      ]
+    },
+    {
+      "code": "600707",
+      "name": "彩虹股份",
+      "price": 12.15,
+      "pct": 3.76,
+      "turnover": 6.37,
+      "volume": 2286216.0,
+      "open": 11.37,
+      "high": 12.39,
+      "low": 10.92,
+      "preclose": 11.71,
+      "ma5": 11.06,
+      "ma10": 10.96,
+      "ma20": 10.84,
+      "vol_ratio": 1.0,
+      "close": 12.14,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘12.14距MA10(10.96)仅+10.7%，收阳确认"
+        }
+      ]
+    },
+    {
+      "code": "000068",
+      "name": "华控赛格",
+      "price": 3.92,
+      "pct": 10.11,
+      "turnover": 5.26,
+      "volume": 529441.0,
+      "open": 3.5,
+      "high": 3.92,
+      "low": 3.48,
+      "preclose": 3.56,
+      "ma5": 3.44,
+      "ma10": 3.27,
+      "ma20": 3.26,
+      "vol_ratio": 1.47,
+      "close": 3.92,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘3.92距MA10(3.27)仅+20.0%，收阳确认"
+        }
+      ]
+    },
+    {
+      "code": "000608",
+      "name": "阳光股份",
+      "price": 5.98,
+      "pct": 8.33,
+      "turnover": 8.81,
+      "volume": 656635.0,
+      "open": 5.44,
+      "high": 6.0,
+      "low": 5.3,
+      "preclose": 5.52,
+      "ma5": 5.19,
+      "ma10": 4.76,
+      "ma20": 4.35,
+      "vol_ratio": 1.01,
+      "close": 5.96,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘5.96距MA10(4.76)仅+25.2%，收阳确认"
+        }
+      ]
+    },
+    {
+      "code": "600382",
+      "name": "广东明珠",
+      "price": 8.95,
+      "pct": -7.54,
+      "turnover": 6.6,
+      "volume": 458420.0,
+      "open": 9.61,
+      "high": 9.66,
+      "low": 8.9,
+      "preclose": 9.68,
+      "ma5": 8.8,
+      "ma10": 8.56,
+      "ma20": 8.55,
+      "vol_ratio": 1.35,
+      "close": 8.92,
+      "buy_signals": []
+    }
+  ]
+}

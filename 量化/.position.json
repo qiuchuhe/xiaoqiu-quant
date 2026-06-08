@@ -8,14 +8,51 @@
       "cost": 1392.0,
       "stop_loss": 4.41,
       "stop_loss_pct": -5.0,
-      "take_profit": 5.1,
+      "take_profit": 5.10,
       "take_profit_pct": 10.0,
       "buy_date": "2026-06-04",
       "buy_time": "14:54",
       "notes": "双策略共同选中(用户+小秋) | 模拟盘"
+    },
+    {
+      "code": "000725",
+      "name": "京东方A",
+      "buy_price": 6.16,
+      "shares": 100,
+      "cost": 616.0,
+      "stop_loss": 5.85,
+      "stop_loss_type": "移动止盈-阶梯跟踪",
+      "take_profit": null,
+      "take_profit_type": "移动止盈",
+      "buy_date": "2026-06-05",
+      "buy_time": "隔夜委托",
+      "notes": "均线多头排列+PE6.8 | 底仓趋势跟踪不设固定止盈",
+      "trailing_stops": [
+        {"price_level": 6.50, "stop_up_to": 6.01},
+        {"price_level": 7.00, "stop_up_to": 6.50},
+        {"price_level": 7.50, "stop_up_to": 7.00},
+        {"price_level": 8.00, "stop_up_to": 7.50}
+      ]
+    }
+  ],
+  "trade_history": [
+    {
+      "code": "002030",
+      "name": "达安基因",
+      "buy_price": 6.64,
+      "shares": 100,
+      "buy_cost": 664.0,
+      "sell_price": 5.95,
+      "sell_amount": 595.0,
+      "pnl": -69.0,
+      "pnl_pct": -10.4,
+      "sell_date": "2026-06-08",
+      "reason": "Q1亏损+均线转空头, 止损出局"
     }
   ],
   "principal": 3000,
-  "cash_used": 1392.0,
-  "cash_remaining": 1608.0
+  "cash_used": 2008.0,
+  "cash_remaining": 992.0,
+  "realized_pnl": -69.0,
+  "updated": "2026-06-08 10:10"
 }

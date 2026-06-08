@@ -11,6 +11,7 @@
 import sys, os, time, json, re
 from datetime import datetime, timedelta
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 编码
 if sys.platform == "win32":
@@ -33,6 +34,9 @@ except ImportError:
 # ─── 路径 ───
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = BASE_DIR  # 报告输出到策略1目录下
+
+# ─── 并发设置 ───
+CONCURRENT_WORKERS = 12  # 并发线程数（国内网络可开大点）
 
 # ─── 加载配置 ───
 from config import CONDITIONS, BUY_SIGNALS, SELL_SIGNALS, POSITION, DATA as CFG
@@ -124,17 +128,28 @@ def get_stock_list():
 # ═══════════════════════════════════════════
 
 
-def fetch_quotes_batch(code_list):
-    """腾讯批量行情 → list[dict]"""
+def fetch_quotes_batch(code_list, workers=10):
+    """腾讯批量行情 → list[dict]（并发版）"""
     results = []
-    for i in range(0, len(code_list), 50):
-        batch = code_list[i : i + 50]
+    batches = [code_list[i : i + 50] for i in range(0, len(code_list), 50)]
+    batch_count = len(batches)
+
+    def _fetch_one(batch):
         url = "http://qt.gtimg.cn/q=" + ",".join(batch)
         try:
             raw = http_get(url, timeout=10)
-            results.extend(_parse_tencent_quote(raw))
+            return _parse_tencent_quote(raw)
         except Exception:
-            continue
+            return []
+
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futures = {ex.submit(_fetch_one, b): i for i, b in enumerate(batches)}
+        for fut in as_completed(futures):
+            try:
+                results.extend(fut.result())
+            except Exception:
+                continue
+
     return results
 
 
@@ -282,7 +297,7 @@ def initial_filter(all_stocks):
 
     # 分批获取行情
     tx_codes = [get_tencent_code(c) for c in code_map]
-    all_quotes = fetch_quotes_batch(tx_codes)
+    all_quotes = fetch_quotes_batch(tx_codes, workers=CONCURRENT_WORKERS)
 
     candidates = []
     for q in all_quotes:
@@ -593,18 +608,26 @@ def run_scan(mode="EOD"):
         save_report([])
         return []
 
-    print(f"  {C.B}🔍 K线深度分析（均线多头+量比）...{C.Z}")
+    print(f"  {C.B}🔍 K线深度分析（均线多头+量比，{CONCURRENT_WORKERS}线程并发）...{C.Z}")
     results = []
     total = len(candidates)
-    for i, c in enumerate(candidates):
-        r = deep_analyze(c)
-        if r:
-            results.append(r)
-        if (i + 1) % 20 == 0:
-            sys.stdout.write(
-                f"\r  {C.D}  K线分析: {i+1}/{total}  通过: {len(results)}{C.Z}"
-            )
-            sys.stdout.flush()
+
+    with ThreadPoolExecutor(max_workers=CONCURRENT_WORKERS) as ex:
+        futures = {ex.submit(deep_analyze, c): i for i, c in enumerate(candidates)}
+        done = 0
+        for fut in as_completed(futures):
+            done += 1
+            try:
+                r = fut.result()
+                if r:
+                    results.append(r)
+            except Exception:
+                pass
+            if done % 20 == 0 or done == total:
+                sys.stdout.write(
+                    f"\r  {C.D}  K线分析: {done}/{total}  通过: {len(results)}{C.Z}"
+                )
+                sys.stdout.flush()
     sys.stdout.write(f"\r{C.D}{' '*50}{C.Z}\r")
 
     print(f"  {C.G}深度通过: {len(results)} 只{C.Z}")
