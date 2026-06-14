@@ -1,0 +1,130 @@
+{
+  "holdings": [
+    {
+      "code": "600667",
+      "name": "太极实业",
+      "buy_price": 17.462,
+      "shares": 100,
+      "cost": 1746.0,
+      "stop_loss": 15.72,
+      "stop_loss_pct": -10.0,
+      "take_profit": 19.21,
+      "take_profit_pct": 10.0,
+      "strategy": "策略1 趋势(多头排列)",
+      "buy_date": "2026-06-11",
+      "status": "持有中",
+      "notes": "评分9/10，多头排列+MACD多头+站上所有均线，涨停17.51"
+    }
+  ],
+  "trade_history": [
+    {
+      "code": "600179",
+      "name": "安通控股",
+      "buy_price": 4.64,
+      "shares": 100,
+      "buy_cost": 464.0,
+      "sell_price": 4.33,
+      "sell_amount": 433.0,
+      "pnl": -31.0,
+      "pnl_pct": -6.68,
+      "sell_date": "2026-06-09",
+      "reason": "止损触发"
+    },
+    {
+      "code": "600179",
+      "name": "安通控股",
+      "buy_price": 4.64,
+      "shares": 200,
+      "buy_cost": 928.0,
+      "sell_price": 4.41,
+      "sell_amount": 882.0,
+      "pnl": -46.0,
+      "pnl_pct": -4.96,
+      "sell_date": "2026-06-08",
+      "reason": "止损触发"
+    },
+    {
+      "code": "002030",
+      "name": "达安基因",
+      "buy_price": 6.64,
+      "shares": 100,
+      "buy_cost": 664.0,
+      "sell_price": 5.95,
+      "sell_amount": 595.0,
+      "pnl": -69.0,
+      "pnl_pct": -10.4,
+      "sell_date": "2026-06-08",
+      "reason": "Q1亏损+均线转空头"
+    },
+    {
+      "code": "000725",
+      "name": "京东方A",
+      "buy_price": 6.16,
+      "shares": 100,
+      "buy_cost": 616.0,
+      "sell_price": 6.40,
+      "sell_amount": 640.0,
+      "pnl": 24.0,
+      "pnl_pct": 3.9,
+      "sell_date": "2026-06-08",
+      "reason": "移动止盈触发"
+    },
+    {
+      "code": "600630",
+      "name": "龙头股份",
+      "buy_price": 9.09,
+      "shares": 100,
+      "buy_cost": 909.0,
+      "sell_price": 8.89,
+      "sell_amount": 889.0,
+      "pnl": -20.0,
+      "pnl_pct": -2.20,
+      "sell_date": "2026-06-10",
+      "reason": "策略2B半路次日卖出"
+    },
+    {
+      "code": "600186",
+      "name": "莲花控股",
+      "buy_price": 11.54,
+      "shares": 100,
+      "buy_cost": 1154.0,
+      "sell_price": 11.19,
+      "sell_amount": 1119.0,
+      "pnl": -35.0,
+      "pnl_pct": -3.03,
+      "sell_date": "2026-06-10",
+      "reason": "策略2A打板次日卖出"
+    },
+    {
+      "code": "002106",
+      "name": "莱宝高科",
+      "buy_price": 13.51,
+      "shares": 100,
+      "buy_cost": 1351.0,
+      "sell_price": 12.83,
+      "sell_amount": 1283.0,
+      "pnl": -68.0,
+      "pnl_pct": -5.03,
+      "sell_date": "2026-06-11",
+      "reason": "止损触发"
+    },
+    {
+      "code": "002387",
+      "name": "维信诺",
+      "buy_price": 8.53,
+      "shares": 100,
+      "buy_cost": 853.0,
+      "sell_price": 8.20,
+      "sell_amount": 820.0,
+      "pnl": -33.0,
+      "pnl_pct": -3.87,
+      "sell_date": "2026-06-11",
+      "reason": "走势太弱，主动止损换入太极实业"
+    }
+  ],
+  "principal": 3000,
+  "cash_used": 1746.0,
+  "cash_remaining": 1254.0,
+  "realized_pnl": -278.0,
+  "updated": "2026-06-11 11:05"
+}

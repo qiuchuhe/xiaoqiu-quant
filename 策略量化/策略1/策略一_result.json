@@ -1,155 +1,207 @@
 {
-  "date": "20260608",
-  "time": "10:41:08",
-  "total": 6,
-  "with_signal": 5,
+  "date": "20260614",
+  "time": "23:01:40",
+  "total": 8,
+  "with_signal": 6,
   "candidates": [
     {
-      "code": "603500",
-      "name": "祥和实业",
-      "price": 13.45,
-      "pct": 9.98,
-      "turnover": 6.53,
-      "volume": 217035.0,
-      "open": 13.0,
-      "high": 13.45,
-      "low": 13.0,
-      "preclose": 12.23,
-      "ma5": 11.45,
+      "code": "603060",
+      "name": "国检集团",
+      "price": 7.61,
+      "pct": 1.6,
+      "turnover": 5.53,
+      "volume": 444518.0,
+      "open": 7.45,
+      "high": 8.14,
+      "low": 7.3,
+      "preclose": 7.49,
+      "ma5": 7.43,
+      "ma10": 7.26,
+      "ma20": 7.02,
+      "vol_ratio": 1.56,
+      "close": 7.61,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘7.61距MA10(7.26)仅+4.8%，收阳确认"
+        },
+        {
+          "type": "B_breakout_ma5",
+          "name": "放量站稳MA5",
+          "detail": "收盘7.61站稳MA5(7.43)，量比1.6x"
+        }
+      ]
+    },
+    {
+      "code": "603020",
+      "name": "爱普股份",
+      "price": 13.04,
+      "pct": 10.04,
+      "turnover": 6.35,
+      "volume": 238468.0,
+      "open": 11.98,
+      "high": 13.04,
+      "low": 11.88,
+      "preclose": 11.85,
+      "ma5": 11.82,
       "ma10": 10.93,
-      "ma20": 10.58,
-      "vol_ratio": 1.8,
-      "close": 13.45,
+      "ma20": 10.61,
+      "vol_ratio": 1.56,
+      "close": 13.04,
       "buy_signals": [
         {
           "type": "A_pullback_ma10",
           "name": "回调MA10不破",
-          "detail": "收盘13.45距MA10(10.93)仅+23.1%，收阳确认"
+          "detail": "收盘13.04距MA10(10.93)仅+19.3%，收阳确认"
         },
         {
           "type": "B_breakout_ma5",
           "name": "放量站稳MA5",
-          "detail": "收盘13.45站稳MA5(11.45)，量比1.8x"
+          "detail": "收盘13.04站稳MA5(11.82)，量比1.6x"
         }
       ]
     },
     {
-      "code": "600403",
-      "name": "大有能源",
-      "price": 8.78,
-      "pct": 7.86,
-      "turnover": 6.86,
-      "volume": 1639572.0,
-      "open": 8.23,
-      "high": 8.95,
-      "low": 8.23,
-      "preclose": 8.14,
-      "ma5": 7.45,
-      "ma10": 6.3,
-      "ma20": 5.84,
+      "code": "603015",
+      "name": "XD弘讯科",
+      "price": 13.27,
+      "pct": 4.98,
+      "turnover": 9.83,
+      "volume": 397378.0,
+      "open": 12.9,
+      "high": 13.9,
+      "low": 12.83,
+      "preclose": 12.64,
+      "ma5": 12.81,
+      "ma10": 12.37,
+      "ma20": 12.36,
+      "vol_ratio": 3.08,
+      "close": 13.27,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘13.27距MA10(12.37)仅+7.3%，收阳确认"
+        },
+        {
+          "type": "B_breakout_ma5",
+          "name": "放量站稳MA5",
+          "detail": "收盘13.27站稳MA5(12.81)，量比3.1x"
+        }
+      ]
+    },
+    {
+      "code": "600397",
+      "name": "江钨装备",
+      "price": 14.72,
+      "pct": 3.23,
+      "turnover": 9.57,
+      "volume": 947864.0,
+      "open": 14.2,
+      "high": 15.44,
+      "low": 14.05,
+      "preclose": 14.26,
+      "ma5": 14.07,
+      "ma10": 13.91,
+      "ma20": 13.72,
       "vol_ratio": 2.03,
-      "close": 8.84,
+      "close": 14.72,
       "buy_signals": [
         {
           "type": "A_pullback_ma10",
           "name": "回调MA10不破",
-          "detail": "收盘8.84距MA10(6.30)仅+40.4%，收阳确认"
+          "detail": "收盘14.72距MA10(13.91)仅+5.9%，收阳确认"
         },
         {
           "type": "B_breakout_ma5",
           "name": "放量站稳MA5",
-          "detail": "收盘8.84站稳MA5(7.45)，量比2.0x"
+          "detail": "收盘14.72站稳MA5(14.07)，量比2.0x"
         }
       ]
     },
     {
-      "code": "600707",
-      "name": "彩虹股份",
-      "price": 12.15,
-      "pct": 3.76,
-      "turnover": 6.37,
-      "volume": 2286216.0,
-      "open": 11.37,
-      "high": 12.39,
-      "low": 10.92,
-      "preclose": 11.71,
-      "ma5": 11.06,
-      "ma10": 10.96,
-      "ma20": 10.84,
-      "vol_ratio": 1.0,
-      "close": 12.14,
-      "buy_signals": [
-        {
-          "type": "A_pullback_ma10",
-          "name": "回调MA10不破",
-          "detail": "收盘12.14距MA10(10.96)仅+10.7%，收阳确认"
-        }
-      ]
-    },
-    {
-      "code": "000068",
-      "name": "华控赛格",
-      "price": 3.92,
-      "pct": 10.11,
-      "turnover": 5.26,
-      "volume": 529441.0,
-      "open": 3.5,
-      "high": 3.92,
-      "low": 3.48,
-      "preclose": 3.56,
-      "ma5": 3.44,
-      "ma10": 3.27,
-      "ma20": 3.26,
-      "vol_ratio": 1.47,
-      "close": 3.92,
-      "buy_signals": [
-        {
-          "type": "A_pullback_ma10",
-          "name": "回调MA10不破",
-          "detail": "收盘3.92距MA10(3.27)仅+20.0%，收阳确认"
-        }
-      ]
-    },
-    {
-      "code": "000608",
-      "name": "阳光股份",
-      "price": 5.98,
-      "pct": 8.33,
+      "code": "603212",
+      "name": "赛伍技术",
+      "price": 16.48,
+      "pct": 5.17,
       "turnover": 8.81,
-      "volume": 656635.0,
-      "open": 5.44,
-      "high": 6.0,
-      "low": 5.3,
-      "preclose": 5.52,
-      "ma5": 5.19,
-      "ma10": 4.76,
-      "ma20": 4.35,
-      "vol_ratio": 1.01,
-      "close": 5.96,
+      "volume": 385504.0,
+      "open": 15.58,
+      "high": 16.5,
+      "low": 15.34,
+      "preclose": 15.67,
+      "ma5": 16.13,
+      "ma10": 15.8,
+      "ma20": 15.3,
+      "vol_ratio": 1.11,
+      "close": 16.48,
       "buy_signals": [
         {
           "type": "A_pullback_ma10",
           "name": "回调MA10不破",
-          "detail": "收盘5.96距MA10(4.76)仅+25.2%，收阳确认"
+          "detail": "收盘16.48距MA10(15.80)仅+4.3%，收阳确认"
         }
       ]
     },
     {
-      "code": "600382",
-      "name": "广东明珠",
-      "price": 8.95,
-      "pct": -7.54,
-      "turnover": 6.6,
-      "volume": 458420.0,
-      "open": 9.61,
-      "high": 9.66,
-      "low": 8.9,
-      "preclose": 9.68,
-      "ma5": 8.8,
-      "ma10": 8.56,
-      "ma20": 8.55,
-      "vol_ratio": 1.35,
-      "close": 8.92,
+      "code": "600881",
+      "name": "亚泰集团",
+      "price": 1.77,
+      "pct": 5.36,
+      "turnover": 6.16,
+      "volume": 1990279.0,
+      "open": 1.66,
+      "high": 1.85,
+      "low": 1.62,
+      "preclose": 1.68,
+      "ma5": 1.7,
+      "ma10": 1.63,
+      "ma20": 1.56,
+      "vol_ratio": 1.18,
+      "close": 1.77,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘1.77距MA10(1.63)仅+8.8%，收阳确认"
+        }
+      ]
+    },
+    {
+      "code": "603386",
+      "name": "骏亚科技",
+      "price": 17.23,
+      "pct": -4.81,
+      "turnover": 8.42,
+      "volume": 274736.0,
+      "open": 18.1,
+      "high": 18.66,
+      "low": 17.12,
+      "preclose": 18.1,
+      "ma5": 17.89,
+      "ma10": 17.53,
+      "ma20": 16.8,
+      "vol_ratio": 1.1,
+      "close": 17.23,
+      "buy_signals": []
+    },
+    {
+      "code": "600596",
+      "name": "新安股份",
+      "price": 14.36,
+      "pct": 0.42,
+      "turnover": 6.9,
+      "volume": 930609.0,
+      "open": 14.5,
+      "high": 14.99,
+      "low": 13.87,
+      "preclose": 14.3,
+      "ma5": 14.36,
+      "ma10": 14.08,
+      "ma20": 13.22,
+      "vol_ratio": 1.0,
+      "close": 14.36,
       "buy_signals": []
     }
   ]
