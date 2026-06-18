@@ -1,17 +1,32 @@
 {
   "holdings": [
     {
+      "code": "000970",
+      "name": "中科三环",
+      "buy_price": 14.332,
+      "shares": 100,
+      "cost": 1433.2,
+      "stop_loss": 13.62,
+      "stop_loss_pct": -5.0,
+      "take_profit": 15.77,
+      "take_profit_pct": 10.0,
+      "high_price": 14.66,
+      "buy_date": "2026-06-17",
+      "notes": "稀土永磁，涨停次日分歧买入，掘金推荐"
+    },
+    {
       "code": "600226",
       "name": "亨通股份",
-      "buy_price": 7.56,
+      "buy_price": 9.76,
       "shares": 100,
-      "cost": 756.0,
-      "stop_loss": 7.18,
+      "cost": 976.0,
+      "stop_loss": 9.27,
       "stop_loss_pct": -5.0,
-      "take_profit": 8.32,
+      "take_profit": 10.74,
       "take_profit_pct": 10.0,
-      "buy_date": "2026-06-12",
-      "notes": "掘金推荐+回踩MA10不破+收盘持平，策略1双买点"
+      "high_price": 9.76,
+      "buy_date": "2026-06-18",
+      "notes": "打板买入@涨停，光通信中军，3进4板。昨日卖飞+108后追回，风险：涨停板次日溢价不确定"
     }
   ],
   "trade_history": [
@@ -23,11 +38,13 @@
     {"code": "600186", "name": "莲花控股", "shares": 100, "pnl": -35, "date": "2026-06-10", "reason": "止损"},
     {"code": "002106", "name": "莱宝高科", "shares": 100, "pnl": -68, "date": "2026-06-11", "reason": "止损"},
     {"code": "002387", "name": "维信诺", "shares": 100, "pnl": -43, "date": "2026-06-11", "reason": "止损"},
-    {"code": "600667", "name": "太极实业", "shares": 100, "pnl": -66, "date": "2026-06-12", "reason": "止损"}
+    {"code": "600667", "name": "太极实业", "shares": 100, "pnl": -66, "date": "2026-06-12", "reason": "止损"},
+    {"code": "600226", "name": "亨通股份", "shares": 100, "pnl": 108, "date": "2026-06-17", "reason": "条件单卖出@8.64"},
+    {"code": "600226", "name": "亨通股份", "shares": 100, "pnl": 0, "date": "2026-06-18", "reason": "打板追回@9.76"}
   ],
   "principal": 3000,
-  "cash_used": 756.0,
-  "cash_remaining": 2244.0,
-  "realized_pnl": -354.0,
-  "updated": "2026-06-14 22:30"
+  "cash_used": 2409.2,
+  "cash_remaining": 344.8,
+  "realized_pnl": -246.0,
+  "updated": "2026-06-18 10:35"
 }

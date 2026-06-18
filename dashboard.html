@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小秋看盘</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0d1117; color:#c9d1d9; font-family:'Microsoft YaHei',sans-serif; padding:14px; max-width:960px; margin:0 auto; }
+.hd { text-align:center; padding:10px 0; border-bottom:1px solid #21262d; margin-bottom:10px; }
+.hd h1 { font-size:20px; color:#58a6ff; }
+.hd .tm { font-size:11px; color:#8b949e; margin-top:3px; }
+.idx { display:flex; gap:10px; justify-content:center; margin-bottom:12px; flex-wrap:wrap; }
+.idx-c { background:#161b22; border:1px solid #30363d; border-radius:8px; padding:8px 16px; text-align:center; min-width:130px; }
+.idx-c .n { font-size:10px; color:#8b949e; }
+.idx-c .p { font-size:18px; font-weight:bold; }
+.pos-wrap { display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+.pos { background:linear-gradient(135deg,#1a1f2e,#1a2332); border:2px solid #d2991d; border-radius:8px; padding:12px 16px; flex:1; min-width:280px; }
+.pos .lb { font-size:10px; color:#d2991d; letter-spacing:2px; }
+.pos .nm { font-size:16px; font-weight:bold; }
+.pos .rw { display:flex; gap:14px; margin-top:6px; flex-wrap:wrap; font-size:12px; color:#8b949e; }
+.pos .rw span { color:#e6edf3; font-weight:bold; }
+.up { color:#e5534b; }
+.dn { color:#57ab5a; }
+.zt { background:#2d1215 !important; }
+.tag-zt { background:#e5534b; color:#fff; font-size:9px; padding:1px 4px; border-radius:2px; margin-left:4px; }
+.tag-pos { background:#d2991d; color:#000; font-size:9px; padding:1px 4px; border-radius:2px; margin-left:4px; }
+.tag-hot { border:1px solid #d2991d; color:#d2991d; font-size:9px; padding:1px 4px; border-radius:2px; }
+table { width:100%; border-collapse:collapse; }
+th { text-align:left; padding:6px 10px; font-size:10px; color:#8b949e; border-bottom:1px solid #21262d; }
+td { padding:5px 10px; font-size:12px; border-bottom:1px solid #161b22; }
+tr:hover { background:#161b22; }
+.cd { color:#8b949e; font-size:10px; }
+.ft { text-align:center; font-size:10px; color:#30363d; margin-top:14px; }
+.st { display:inline-block; font-size:9px; color:#58a6ff; margin-right:3px; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.ld { animation:pulse 1s infinite; color:#d2991d; }
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <h1>小秋看盘</h1>
+  <div class="tm" id="time">加载中...</div>
+</div>
+
+<div class="idx" id="indices"></div>
+<div class="pos-wrap" id="posBox"><div class="ld" style="text-align:center;padding:20px;width:100%">数据加载中，请稍候...</div></div>
+
+<table>
+<thead><tr><th>股票</th><th>现价</th><th>涨幅</th><th>换手</th><th>量比</th></tr></thead>
+<tbody id="body"></tbody>
+</table>
+
+<div class="ft">每10秒自动刷新 | 数据:腾讯行情 | <span id="cnt">0</span>次</div>
+
+<script>
+// ===== 配置：python update_dashboard.py 自动更新 =====
+var POSITIONS = [{"code": "000970", "name": "中科三环", "cost": 14.332, "shares": 100, "stop": 13.62, "tp": 15.77}, {"code": "600226", "name": "亨通股份", "cost": 9.76, "shares": 100, "stop": 9.27, "tp": 10.74}];
+
+// 自选股列表（python update_dashboard.py 自动更新）
+var WATCH = ["sh601636", "sh600110", "sh600186", "sh603601", "sz000970", "sz002185", "sh600667", "sh603803", "sz002194", "sz002361", "sh600722", "sh600226", "sz002506", "sz000862", "sh603778", "sz002263", "sh600666", "sz002342", "sh601975", "sz002565", "sh601991", "sz002585", "sz000012", "sz002378", "sh605006", "sh600458", "sz000767", "sz002181", "sz002515", "sh600726", "sh601609", "sh600956", "sz002044", "sh600228", "sz002579", "sz000601", "sz000890", "sh603466", "sz002706", "sh600396", "sz002580", "sz002208", "sz002229", "sh603399", "sh600162", "sh603618", "sh600863", "sh603687", "sh600023", "sz000725", "sh603002", "sz000520", "sz001896", "sz002429", "sh600683", "sh600884", "sz002600", "sz000815", "sz002141", "sh603001"];
+var WNAMES = {"sh601636": "旗滨集团", "sh600110": "诺德股份", "sh600186": "莲花控股", "sh603601": "再升科技", "sz000970": "中科三环", "sz002185": "华天科技", "sh600667": "太极实业", "sh603803": "瑞斯康达", "sz002194": "武汉凡谷", "sz002361": "神剑股份", "sh600722": "金牛化工", "sh600226": "亨通股份", "sz002506": "协鑫集成", "sz000862": "银星能源", "sh603778": "国晟科技", "sz002263": "大东南", "sh600666": "奥瑞德", "sz002342": "巨力索具", "sh601975": "招商南油", "sz002565": "顺灏股份", "sh601991": "大唐发电", "sz002585": "双星新材", "sz000012": "南玻A", "sz002378": "章源钨业", "sh605006": "山东玻纤", "sh600458": "时代新材", "sz000767": "晋控电力", "sz002181": "粤 传 媒", "sz002515": "金字火腿", "sh600726": "华电能源", "sh601609": "金田股份", "sh600956": "新天绿能", "sz002044": "美年健康", "sh600228": "返利科技", "sz002579": "中京电子", "sz000601": "韶能股份", "sz000890": "法尔胜", "sh603466": "风语筑", "sz002706": "良信股份", "sh600396": "华电辽能", "sz002580": "圣阳股份", "sz002208": "合肥城建", "sz002229": "鸿博股份", "sh603399": "永杉锂业", "sh600162": "香江控股", "sh603618": "杭电股份", "sh600863": "华能蒙电", "sh603687": "大胜达", "sh600023": "浙能电力", "sz000725": "京东方Ａ", "sh603002": "宏昌电子", "sz000520": "凤凰航运", "sz001896": "豫能控股", "sz002429": "兆驰股份", "sh600683": "京投发展", "sh600884": "杉杉股份", "sz002600": "领益智造", "sz000815": "美利云", "sz002141": "贤丰控股", "sh603001": "奥康国际"};
+
+// 持仓代码速查表
+var POS_MAP = {}; POSITIONS.forEach(function(p){ POS_MAP[p.code] = p; });
+var POS_CODES = POSITIONS.map(function(p){ return p.code; });
+// ===== 配置结束 =====
+
+var SECTORS = {};
+['旗滨集团','诺德股份','莲花控股','再升科技','中科三环','双星新材','南玻A','宏昌电子'].forEach(function(n){SECTORS[n]='热点';});
+['华天科技','太极实业','瑞斯康达','武汉凡谷'].forEach(function(n){SECTORS[n]='科技';});
+['神剑股份','金牛化工','亨通股份'].forEach(function(n){SECTORS[n]='化工';});
+['协鑫集成','银星能源','国晟科技','大唐发电'].forEach(function(n){SECTORS[n]='电力';});
+['大东南','奥瑞德','巨力索具'].forEach(function(n){SECTORS[n]='低价';});
+['招商南油','顺灏股份'].forEach(function(n){SECTORS[n]='运输';});
+
+var cnt = 0;
+
+function parse(raw) {
+  var res = [];
+  var lines = raw.split(';\n');
+  for (var i = 0; i < lines.length; i++) {
+    var m = lines[i].match(/="(.+)"/);
+    if (!m) continue;
+    var f = m[1].split('~');
+    if (f.length < 40) continue;
+    res.push({
+      code: f[2], name: f[1],
+      price: parseFloat(f[3])||0, prev: parseFloat(f[4])||0,
+      chg: parseFloat(f[32])||0, high: parseFloat(f[33])||0, low: parseFloat(f[34])||0,
+      turnover: parseFloat(f[38])||0, vr: parseFloat(f[49])||0, amount: parseFloat(f[37])||0
+    });
+  }
+  return res;
+}
+
+function fetchQ(codes) {
+  return new Promise(function(resolve) {
+    var url = 'http://qt.gtimg.cn/q=' + codes.join(',');
+    try {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.timeout = 8000;
+      xhr.onload = function() { resolve(parse(xhr.responseText)); };
+      xhr.onerror = function() { resolve([]); };
+      xhr.ontimeout = function() { resolve([]); };
+      xhr.send();
+    } catch(e) { resolve([]); }
+  });
+}
+
+function renderPosCard(p, q) {
+  if (!q || q.price <= 0) {
+    return '<div class="pos"><div class="lb">POSITION</div><div class="nm">'+p.name+' <span style="font-size:11px;color:#8b949e">'+p.code+'</span></div><div style="color:#8b949e;margin-top:4px">waiting for data...</div></div>';
+  }
+  var pnl = (q.price - p.cost) / p.cost * 100;
+  var cls = pnl >= 0 ? 'up' : 'dn';
+  var sn = pnl >= 0 ? '+' : '';
+  var ds = ((q.price - p.stop) / q.price * 100);
+  var pnlYuan = ((q.price - p.cost) * p.shares).toFixed(0);
+  return '<div class="pos">'+
+    '<div class="lb">POSITION · '+p.shares+'股</div>'+
+    '<div class="nm">'+p.name+' <span style="font-size:11px;color:#8b949e">'+p.code+'</span></div>'+
+    '<div class="rw">'+
+      '<div>cost <span>'+p.cost.toFixed(2)+'</span></div>'+
+      '<div>price <span class="'+cls+'">'+q.price.toFixed(2)+'</span></div>'+
+      '<div>P&amp;L <span class="'+cls+'" style="font-size:15px">'+sn+pnl.toFixed(2)+'%</span> <span class="'+cls+'">('+sn+'¥'+pnlYuan+')</span></div>'+
+      '<div>stop <span style="color:#e5534b">'+p.stop.toFixed(2)+'</span> <span style="font-size:10px;color:#8b949e">('+ds.toFixed(1)+'%)</span></div>'+
+      '<div>target <span style="color:#57ab5a">'+p.tp.toFixed(2)+'</span></div>'+
+      '<div>high <span>'+q.high.toFixed(2)+'</span></div>'+
+      '<div>low <span>'+q.low.toFixed(2)+'</span></div>'+
+    '</div></div>';
+}
+
+async function refresh() {
+  // 指数
+  var idxQ = await fetchQ(['sh000001','sz399001','sz399006']);
+  var idxMap = {}; for (var i=0;i<idxQ.length;i++) idxMap[idxQ[i].code] = idxQ[i];
+  var idxNames = {'000001':'上证','399001':'深证','399006':'创业板'};
+  var idxHTML = '';
+  ['000001','399001','399006'].forEach(function(c) {
+    var q = idxMap[c]; if (!q) return;
+    var cl = q.chg >= 0 ? 'up' : 'dn';
+    var ar = q.chg >= 0 ? '+' : '';
+    idxHTML += '<div class="idx-c"><div class="n">'+idxNames[c]+'</div><div class="p '+cl+'">'+q.price.toFixed(2)+'</div><div class="'+cl+'" style="font-size:12px">'+ar+q.chg.toFixed(2)+'%</div></div>';
+  });
+  document.getElementById('indices').innerHTML = idxHTML;
+
+  // 所有持仓代码前缀
+  var posPrefixes = POSITIONS.map(function(p){ return (p.code.startsWith('6')?'sh':'sz')+p.code; });
+
+  // 持仓行情（如果还没在指数里）
+  var posHTML = '';
+  for (var pi = 0; pi < POSITIONS.length; pi++) {
+    var p = POSITIONS[pi];
+    var q = idxMap[p.code];
+    if (!q) {
+      var tmp = await fetchQ([(p.code.startsWith('6')?'sh':'sz')+p.code]);
+      q = tmp[0];
+    }
+    posHTML += renderPosCard(p, q);
+  }
+  document.getElementById('posBox').innerHTML = posHTML;
+
+  // 自选股
+  var allQ = [];
+  for (var i=0;i<WATCH.length;i+=50) {
+    var batch = WATCH.slice(i,i+50);
+    var qs = await fetchQ(batch);
+    allQ = allQ.concat(qs);
+  }
+  var qMap = {}; for (var j=0;j<allQ.length;j++) qMap[allQ[j].code] = allQ[j];
+
+  allQ.sort(function(a,b) { return b.chg - a.chg; });
+
+  var body = '';
+  for (var k=0;k<allQ.length;k++) {
+    var q = allQ[k];
+    var raw = q.code;
+    var name = WNAMES[(raw.startsWith('6')||raw.startsWith('5')||raw.startsWith('9')?'sh':'sz')+raw] || q.name;
+    var sec = SECTORS[name] || '';
+    var cl = q.chg >= 0 ? 'up' : 'dn';
+    var ar = q.chg >= 0 ? '+' : '';
+    var isZT = q.chg >= 9.5;
+    var isPos = POS_CODES.indexOf(raw) >= 0;
+    var rowCls = isZT ? 'zt' : '';
+    var tags = '';
+    if (isZT) tags += '<span class="tag-zt">ZT</span>';
+    if (isPos) tags += '<span class="tag-pos">HOLD</span>';
+    if (q.turnover > 10) tags += '<span class="tag-hot">HOT</span>';
+    var vrT = q.vr > 0 ? q.vr.toFixed(1)+'x' : '-';
+    body += '<tr class="'+rowCls+'"><td><span class="st">['+sec+']</span> '+name+'<span class="cd"> '+raw+'</span>'+tags+'</td><td class="'+cl+'" style="font-weight:bold">'+q.price.toFixed(2)+'</td><td class="'+cl+'">'+ar+q.chg.toFixed(2)+'%</td><td>'+q.turnover.toFixed(1)+'%</td><td>'+vrT+'</td></tr>';
+  }
+  document.getElementById('body').innerHTML = body;
+
+  cnt++;
+  document.getElementById('cnt').textContent = cnt;
+  document.getElementById('time').textContent = new Date().toLocaleTimeString('zh-CN',{hour12:false});
+}
+
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>
