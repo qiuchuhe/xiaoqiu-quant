@@ -1,74 +1,7 @@
 {
-  "date": "20260618",
-  "time": "10:24:51",
-  "total": 3,
-  "with_signal": 2,
-  "candidates": [
-    {
-      "code": "601636",
-      "name": "旗滨集团",
-      "price": 8.14,
-      "pct": -6.11,
-      "turnover": 9.07,
-      "volume": 2684315.0,
-      "open": 8.59,
-      "high": 8.59,
-      "low": 7.8,
-      "preclose": 8.67,
-      "ma5": 7.67,
-      "ma10": 7.23,
-      "ma20": 6.94,
-      "vol_ratio": 2.04,
-      "close": 8.14,
-      "buy_signals": [
-        {
-          "type": "B_breakout_ma5",
-          "name": "放量站稳MA5",
-          "detail": "收盘8.14站稳MA5(7.67)，量比2.0x"
-        }
-      ]
-    },
-    {
-      "code": "603001",
-      "name": "奥康国际",
-      "price": 11.35,
-      "pct": 5.0,
-      "turnover": 5.94,
-      "volume": 238219.0,
-      "open": 10.88,
-      "high": 11.89,
-      "low": 10.83,
-      "preclose": 10.81,
-      "ma5": 10.64,
-      "ma10": 10.46,
-      "ma20": 10.43,
-      "vol_ratio": 1.25,
-      "close": 11.36,
-      "buy_signals": [
-        {
-          "type": "A_pullback_ma10",
-          "name": "回调MA10不破",
-          "detail": "收盘11.36距MA10(10.46)仅+8.6%，收阳确认"
-        }
-      ]
-    },
-    {
-      "code": "002106",
-      "name": "莱宝高科",
-      "price": 14.09,
-      "pct": -4.67,
-      "turnover": 7.42,
-      "volume": 522689.0,
-      "open": 14.84,
-      "high": 14.99,
-      "low": 13.84,
-      "preclose": 14.78,
-      "ma5": 13.53,
-      "ma10": 13.28,
-      "ma20": 12.63,
-      "vol_ratio": 1.2,
-      "close": 14.09,
-      "buy_signals": []
-    }
-  ]
+  "date": "20260622",
+  "time": "10:12:32",
+  "total": 0,
+  "with_signal": 0,
+  "candidates": []
 }
