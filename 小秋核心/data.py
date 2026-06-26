@@ -22,11 +22,12 @@ def get_stock_list(cache_dir=None, cache_hours=24):
                 return json.load(f)
 
     codes = {}
+    fetch_ok = False
     try:
         page = 1
         while True:
             url = (
-                "http://80.push2.eastmoney.com/api/qt/clist/get?"
+                "https://push2.eastmoney.com/api/qt/clist/get?"
                 f"pn={page}&pz=100&po=1&np=1&fltt=2&invt=2&fid=f12"
                 "&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23&fields=f12,f14"
             )
@@ -40,12 +41,17 @@ def get_stock_list(cache_dir=None, cache_hours=24):
             if page * 100 >= data["data"].get("total", 0):
                 break
             page += 1
+        fetch_ok = True
     except Exception:
         pass
 
-    if codes:
+    if codes and fetch_ok:
         with open(cache_path, "w", encoding="utf-8") as f:
             json.dump(codes, f, ensure_ascii=False)
+    elif not codes and os.path.exists(cache_path):
+        # 网络失败时回退到旧缓存（股票代码列表变化极慢，旧数据完全可用）
+        with open(cache_path, encoding="utf-8") as f:
+            codes = json.load(f)
     return codes
 
 

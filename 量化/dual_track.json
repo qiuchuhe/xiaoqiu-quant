@@ -1,0 +1,107 @@
+{
+  "start_date": "2026-06-26",
+  "track_a": {
+    "positions": [
+      {
+        "code": "603010",
+        "name": "万盛股份",
+        "entry_price": 16.56,
+        "entry_date": "2026-06-26",
+        "entry_time": "11:27",
+        "buy_type": "A_pullback_ma10+B_breakout_ma5",
+        "reason": "收盘16.55距MA10(14.41)仅+14.9%，收阳确认 | 收盘16.55站稳MA5(14.90)，量比2.4x",
+        "status": "holding",
+        "peak_price": 16.59
+      },
+      {
+        "code": "603458",
+        "name": "勘设股份",
+        "entry_price": 16.07,
+        "entry_date": "2026-06-26",
+        "entry_time": "11:27",
+        "buy_type": "A_pullback_ma10",
+        "reason": "收盘16.06距MA10(14.43)仅+11.3%，收阳确认",
+        "status": "holding",
+        "peak_price": 16.18
+      },
+      {
+        "code": "600770",
+        "name": "综艺股份",
+        "entry_price": 6.86,
+        "entry_date": "2026-06-26",
+        "entry_time": "11:27",
+        "buy_type": "A_pullback_ma10",
+        "reason": "收盘6.84距MA10(6.10)仅+12.0%，收阳确认",
+        "status": "holding"
+      },
+      {
+        "code": "002587",
+        "name": "奥拓电子",
+        "entry_price": 7.2,
+        "entry_date": "2026-06-26",
+        "entry_time": "11:27",
+        "buy_type": "A_pullback_ma10",
+        "reason": "收盘7.16距MA10(6.98)仅+2.6%，收阳确认",
+        "status": "holding"
+      },
+      {
+        "code": "000703",
+        "name": "恒逸石化",
+        "entry_price": 16.78,
+        "entry_date": "2026-06-26",
+        "entry_time": "11:27",
+        "buy_type": "B_breakout_ma5",
+        "reason": "收盘16.63站稳MA5(14.68)，量比2.5x",
+        "status": "holding",
+        "peak_price": 16.79
+      },
+      {
+        "code": "001205",
+        "name": "盛航股份",
+        "entry_price": 13.98,
+        "entry_date": "2026-06-26",
+        "entry_time": "11:27",
+        "buy_type": "A_pullback_ma10",
+        "reason": "收盘13.96距MA10(14.14)仅-1.3%，收阳确认",
+        "status": "holding"
+      }
+    ],
+    "history": []
+  },
+  "track_b": {
+    "positions": [
+      {
+        "code": "002617",
+        "name": "露笑科技",
+        "entry_price": 9.64,
+        "entry_date": "2026-06-26",
+        "entry_time": "11:31",
+        "reason": "朋友逻辑:新能源+光伏双属性，逼近涨停+7.2%，换手14.6%健康，裸K收阳",
+        "status": "holding",
+        "peak_price": 9.65
+      },
+      {
+        "code": "600619",
+        "name": "海立股份",
+        "entry_price": 15.18,
+        "entry_date": "2026-06-26",
+        "entry_time": "11:31",
+        "reason": "朋友逻辑:压缩机龙头，逼近涨停+7.6%，换手6%筹码稳，裸K强势突破",
+        "status": "holding",
+        "peak_price": 15.19
+      },
+      {
+        "code": "600707",
+        "name": "彩虹股份",
+        "entry_price": 14.37,
+        "entry_date": "2026-06-26",
+        "entry_time": "11:31",
+        "reason": "朋友逻辑:玻璃基板龙头，今日最强主线，冲高回落企稳，换手6.4%健康",
+        "status": "holding",
+        "peak_price": 14.38
+      }
+    ],
+    "history": []
+  },
+  "updated": "2026-06-26 11:36"
+}

@@ -1,7 +1,235 @@
 {
-  "date": "20260622",
-  "time": "10:12:32",
-  "total": 0,
-  "with_signal": 0,
-  "candidates": []
+  "date": "20260626",
+  "time": "12:04:48",
+  "total": 10,
+  "with_signal": 7,
+  "candidates": [
+    {
+      "code": "603010",
+      "name": "万盛股份",
+      "price": 16.59,
+      "pct": 6.83,
+      "turnover": 7.42,
+      "volume": 423598.0,
+      "open": 15.79,
+      "high": 16.99,
+      "low": 15.55,
+      "preclose": 15.53,
+      "ma5": 14.91,
+      "ma10": 14.41,
+      "ma20": 14.26,
+      "vol_ratio": 2.46,
+      "close": 16.59,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘16.59距MA10(14.41)仅+15.1%，收阳确认"
+        },
+        {
+          "type": "B_breakout_ma5",
+          "name": "放量站稳MA5",
+          "detail": "收盘16.59站稳MA5(14.91)，量比2.5x"
+        }
+      ]
+    },
+    {
+      "code": "603458",
+      "name": "勘设股份",
+      "price": 16.18,
+      "pct": 5.82,
+      "turnover": 9.06,
+      "volume": 277294.0,
+      "open": 15.3,
+      "high": 16.55,
+      "low": 15.29,
+      "preclose": 15.29,
+      "ma5": 14.94,
+      "ma10": 14.44,
+      "ma20": 13.92,
+      "vol_ratio": 1.12,
+      "close": 16.18,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘16.18距MA10(14.44)仅+12.0%，收阳确认"
+        }
+      ]
+    },
+    {
+      "code": "600770",
+      "name": "综艺股份",
+      "price": 6.84,
+      "pct": 5.72,
+      "turnover": 7.21,
+      "volume": 937111.0,
+      "open": 6.39,
+      "high": 7.08,
+      "low": 6.29,
+      "preclose": 6.47,
+      "ma5": 6.26,
+      "ma10": 6.1,
+      "ma20": 6.04,
+      "vol_ratio": 1.46,
+      "close": 6.84,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘6.84距MA10(6.10)仅+12.0%，收阳确认"
+        }
+      ]
+    },
+    {
+      "code": "002687",
+      "name": "乔治白",
+      "price": 4.48,
+      "pct": -1.75,
+      "turnover": 7.71,
+      "volume": 318713.0,
+      "open": 4.38,
+      "high": 4.63,
+      "low": 4.28,
+      "preclose": 4.56,
+      "ma5": 4.58,
+      "ma10": 4.42,
+      "ma20": 4.34,
+      "vol_ratio": 1.01,
+      "close": 4.48,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘4.48距MA10(4.42)仅+1.3%，收阳确认"
+        }
+      ]
+    },
+    {
+      "code": "002587",
+      "name": "奥拓电子",
+      "price": 7.15,
+      "pct": 3.32,
+      "turnover": 8.92,
+      "volume": 475237.0,
+      "open": 6.86,
+      "high": 7.37,
+      "low": 6.66,
+      "preclose": 6.92,
+      "ma5": 7.08,
+      "ma10": 6.98,
+      "ma20": 6.92,
+      "vol_ratio": 1.11,
+      "close": 7.15,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘7.15距MA10(6.98)仅+2.5%，收阳确认"
+        }
+      ]
+    },
+    {
+      "code": "001205",
+      "name": "盛航股份",
+      "price": 13.95,
+      "pct": 0.0,
+      "turnover": 5.61,
+      "volume": 93470.0,
+      "open": 13.83,
+      "high": 14.22,
+      "low": 13.79,
+      "preclose": 13.95,
+      "ma5": 14.15,
+      "ma10": 14.14,
+      "ma20": 14.08,
+      "vol_ratio": 1.43,
+      "close": 13.95,
+      "buy_signals": [
+        {
+          "type": "A_pullback_ma10",
+          "name": "回调MA10不破",
+          "detail": "收盘13.95距MA10(14.14)仅-1.3%，收阳确认"
+        }
+      ]
+    },
+    {
+      "code": "000703",
+      "name": "恒逸石化",
+      "price": 16.79,
+      "pct": 8.11,
+      "turnover": 5.54,
+      "volume": 2104844.0,
+      "open": 17.08,
+      "high": 17.08,
+      "low": 15.56,
+      "preclose": 15.53,
+      "ma5": 14.71,
+      "ma10": 13.73,
+      "ma20": 13.33,
+      "vol_ratio": 2.54,
+      "close": 16.79,
+      "buy_signals": [
+        {
+          "type": "B_breakout_ma5",
+          "name": "放量站稳MA5",
+          "detail": "收盘16.79站稳MA5(14.71)，量比2.5x"
+        }
+      ]
+    },
+    {
+      "code": "600888",
+      "name": "新疆众和",
+      "price": 15.77,
+      "pct": -2.17,
+      "turnover": 8.82,
+      "volume": 1370581.0,
+      "open": 16.88,
+      "high": 17.28,
+      "low": 15.69,
+      "preclose": 16.12,
+      "ma5": 14.89,
+      "ma10": 13.47,
+      "ma20": 12.23,
+      "vol_ratio": 1.11,
+      "close": 15.77,
+      "buy_signals": []
+    },
+    {
+      "code": "002845",
+      "name": "同兴达",
+      "price": 15.99,
+      "pct": 0.13,
+      "turnover": 7.76,
+      "volume": 194206.0,
+      "open": 16.11,
+      "high": 16.56,
+      "low": 15.82,
+      "preclose": 15.97,
+      "ma5": 15.96,
+      "ma10": 15.65,
+      "ma20": 15.51,
+      "vol_ratio": 1.02,
+      "close": 15.99,
+      "buy_signals": []
+    },
+    {
+      "code": "000566",
+      "name": "海南海药",
+      "price": 4.13,
+      "pct": -10.02,
+      "turnover": 6.78,
+      "volume": 878800.0,
+      "open": 4.55,
+      "high": 4.58,
+      "low": 4.13,
+      "preclose": 4.59,
+      "ma5": 4.2,
+      "ma10": 4.02,
+      "ma20": 4.0,
+      "vol_ratio": 1.42,
+      "close": 4.13,
+      "buy_signals": []
+    }
+  ]
 }

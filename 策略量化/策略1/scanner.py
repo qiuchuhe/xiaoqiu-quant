@@ -237,7 +237,7 @@ def save_report(results, mode="EOD"):
 def run_scan(mode="EOD"):
     """执行一次完整扫描"""
     print(f"\n  {C.B}⏳ 加载股票列表...{C.Z}")
-    all_stocks = get_stock_list(cache_dir=BASE_DIR)
+    all_stocks = get_stock_list(cache_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '小秋核心'), cache_hours=CFG["stock_list_cache_hours"])
     if not all_stocks:
         print(f"  {C.R}❌ 获取股票列表失败{C.Z}")
         return []

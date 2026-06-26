@@ -68,17 +68,17 @@ SELL_SIGNALS = [
         "action": "次日开盘无条件卖出",
     },
     {
-        "id": "ma5_cross_ma10",
-        "name": "短期趋势破坏",
+        "id": "trailing_stop",
+        "name": "跟踪止盈",
         "priority": 2,
-        "condition": "MA5 下穿 MA10",
-        "action": "次日开盘卖出",
+        "condition": "盈利>3%激活，从最高点回撤5%卖出",
+        "action": "盘中触发即卖",
     },
     {
-        "id": "take_profit",
-        "name": "止盈",
+        "id": "ma5_cross_ma10",
+        "name": "短期趋势破坏",
         "priority": 3,
-        "condition": "盈利 ≥ 10%",
+        "condition": "MA5 下穿 MA10",
         "action": "次日开盘卖出",
     },
     {
@@ -98,8 +98,10 @@ POSITION = {
     "init_capital": 3000,      # 初始本金
     "fixed_shares": 100,        # 每笔固定股数
     "max_holdings": 2,          # 最大持仓只数
-    "stop_loss_pct": -5.0,      # 止损线
-    "take_profit_pct": 10.0,    # 止盈线
+    "stop_loss_pct": -5.0,      # 硬止损线
+    "take_profit_pct": 10.0,    # 固定止盈线（旧，保留兼容）
+    "trailing_stop_pct": 5.0,   # 跟踪止盈：从最高点回撤5%就卖
+    "trailing_activate_pct": 3.0,  # 盈利超3%后激活跟踪止盈
 }
 
 # ═══════════════════════════════════════════
@@ -110,5 +112,5 @@ DATA = {
     "kline_days": 60,           # 取多少天K线
     "kline_source": "tencent",  # 腾讯财经（免费/国内直连）
     "quote_source": "tencent",  # 实时行情源
-    "stock_list_cache_hours": 24,  # 股票列表缓存时间
+    "stock_list_cache_hours": 720,  # 股票代码变化极慢，30天缓存
 }

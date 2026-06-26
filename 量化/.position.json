@@ -1,36 +1,5 @@
 {
-  "holdings": [
-    {
-      "code": "000970",
-      "name": "中科三环",
-      "buy_price": 14.332,
-      "shares": 100,
-      "cost": 1433.2,
-      "stop_loss": 14.23,
-      "stop_loss_pct": -5.0,
-      "take_profit": 15.77,
-      "take_profit_pct": 5.3,
-      "high_price": 14.78,
-      "buy_date": "2026-06-17",
-      "notes": "稀土永磁，涨停次日分歧买入，掘金推荐",
-      "daily_high": 15.1,
-      "daily_high_date": "2026-06-22"
-    },
-    {
-      "code": "600226",
-      "name": "亨通股份",
-      "buy_price": 9.76,
-      "shares": 100,
-      "cost": 976.0,
-      "stop_loss": 10.12,
-      "stop_loss_pct": -4.3,
-      "take_profit": 10.74,
-      "take_profit_pct": 1.5,
-      "high_price": 9.76,
-      "buy_date": "2026-06-18",
-      "notes": "打板买入@涨停，光通信中军，3进4板。昨日卖飞+108后追回，风险：涨停板次日溢价不确定"
-    }
-  ],
+  "holdings": [],
   "trade_history": [
     {
       "code": "600179",
@@ -110,20 +79,28 @@
       "shares": 100,
       "pnl": 108,
       "date": "2026-06-17",
-      "reason": "条件单卖出@8.64"
+      "reason": "止盈@8.64(第1轮)"
     },
     {
       "code": "600226",
       "name": "亨通股份",
       "shares": 100,
-      "pnl": 0,
-      "date": "2026-06-18",
-      "reason": "打板追回@9.76"
+      "pnl": 126,
+      "date": "2026-06-25",
+      "reason": "止盈@11.07(第2轮打板)"
+    },
+    {
+      "code": "000970",
+      "name": "中科三环",
+      "shares": 100,
+      "pnl": -10,
+      "date": "2026-06-23",
+      "reason": "止损@14.23"
     }
   ],
   "principal": 3000,
-  "cash_used": 2409.2,
-  "cash_remaining": 344.8,
-  "realized_pnl": -246.0,
-  "updated": "2026-06-22 15:30"
+  "cash_used": 0,
+  "cash_remaining": 2870,
+  "realized_pnl": -130,
+  "updated": "2026-06-26 11:45"
 }
